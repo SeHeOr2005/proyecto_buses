@@ -63,12 +63,30 @@ export class AuthComponent {
     this.regSuccessMessage = '';
   }
 
+  /** Redirige al backend para login con Google OAuth2 */
+  loginGoogle(): void {
+    window.location.href = 'http://localhost:8081/oauth2/authorization/google';
+  }
+
+  /** Redirige a GitHub OAuth: authorize con client_id y redirect_uri al backend */
+  loginGitHub(): void {
+    const clientId = 'Ov23ligZM0UoBxmlXOSG';
+    const redirectUri = encodeURIComponent('http://localhost:8081/auth/github/callback');
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}`;
+  }
+
   /**
    * Maneja el clic en botones de login social.
-   * Por ahora muestra mensaje de "próximamente".
+   * Google y GitHub redirigen a OAuth; Microsoft muestra "próximamente".
    */
   onSocialLogin(provider: string): void {
-    this.errorMessage = `${provider}: disponible próximamente`;
+    if (provider.toLowerCase() === 'google') {
+      this.loginGoogle();
+    } else if (provider.toLowerCase() === 'github') {
+      this.loginGitHub();
+    } else {
+      this.errorMessage = `${provider}: disponible próximamente`;
+    }
   }
 
   /**
@@ -80,8 +98,10 @@ export class AuthComponent {
     this.authService.login(this.email, this.password).subscribe({
       next: (response) => {
         this.authService.saveToken(response.token);
-        this.authService.saveUserEmail(this.email);
-        this.router.navigate(['/home']);
+        this.authService.saveUserEmail(response.email ?? this.email);
+        this.authService.saveUserName(response.name ?? '');
+        this.authService.saveUserPicture(response.picture ?? null);
+        setTimeout(() => this.router.navigate(['/home']), 0);
       },
       error: (err) => {
         this.errorMessage = err.error || 'Email o contraseña incorrectos';

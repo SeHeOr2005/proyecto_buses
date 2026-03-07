@@ -6,7 +6,17 @@
       <h1>BusTrack</h1>
     </div>
     <div class="header-actions">
-      <span class="user-info">{{ userEmail }}</span>
+      @if (userPicture) {
+        <img [src]="userPicture" alt="Foto" class="user-avatar" />
+      } @else {
+        <div class="user-avatar user-avatar-initials" [attr.title]="userName || userEmail">{{ getInitials() }}</div>
+      }
+      <div class="user-detail">
+        @if (userName) {
+          <span class="user-name">{{ userName }}</span>
+        }
+        <span class="user-email">{{ userEmail }}</span>
+      </div>
       <button type="button" (click)="onLogout()" class="btn-logout">Cerrar sesión</button>
     </div>
   </header>
@@ -16,7 +26,7 @@
     <!-- Sección de bienvenida -->
     <section class="welcome-section">
       <h2>Panel de control</h2>
-      <p>Bienvenido al sistema de gestión de transporte. Sesión iniciada correctamente.</p>
+      <p>Bienvenido{{ userName ? ', ' + userName : '' }}. Sesión iniciada correctamente.</p>
     </section>
 
     <!-- Grid de cards con módulos (Rutas, Flota, Horarios) -->

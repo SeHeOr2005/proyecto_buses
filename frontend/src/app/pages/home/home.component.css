@@ -35,17 +35,48 @@
   letter-spacing: -0.02em;
 }
 
-/* Acciones del header: email + logout */
+/* Acciones del header: avatar + nombre/correo + logout */
 .header-actions {
   display: flex;
   align-items: center;
   gap: 1rem;
 }
 
-/* Email del usuario logueado */
-.user-info {
+/* Contenedor nombre + email */
+.user-detail {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.1rem;
+}
+
+.user-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #fff;
+}
+
+.user-email {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* Avatar del usuario: foto o iniciales */
+.user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.user-avatar-initials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
   font-size: 0.9rem;
-  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
 }
 
 /* Botón de cerrar sesión */

@@ -21,8 +21,16 @@ export class LoginComponent {
     private router: Router
   ) {}
 
+  loginGoogle(): void {
+    window.location.href = 'http://localhost:8081/oauth2/authorization/google';
+  }
+
   onSocialLogin(provider: string): void {
-    this.errorMessage = `${provider.charAt(0).toUpperCase() + provider.slice(1)}: disponible próximamente`;
+    if (provider === 'google') {
+      this.loginGoogle();
+    } else {
+      this.errorMessage = `${provider.charAt(0).toUpperCase() + provider.slice(1)}: disponible próximamente`;
+    }
   }
 
   onSubmit(): void {

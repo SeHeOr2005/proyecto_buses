@@ -9,11 +9,26 @@ import { Observable } from 'rxjs';
 
 /** URL base del API de autenticación */
 const API_URL = 'http://localhost:8081/api/auth';
+const API_BASE = 'http://localhost:8081';
 
 /** Respuesta del endpoint de login */
 export interface LoginResponse {
   message: string;
   token: string;
+  name?: string;
+  email?: string;
+  picture?: string | null;
+}
+
+/** Datos del usuario OAuth2 (Google, etc.) */
+export interface OAuth2UserData {
+  sub?: string;
+  name?: string;
+  email?: string;
+  picture?: string;
+  given_name?: string;
+  family_name?: string;
+  email_verified?: boolean;
 }
 
 @Injectable({
@@ -22,6 +37,11 @@ export interface LoginResponse {
 export class AuthService {
 
   constructor(private http: HttpClient) {}
+
+  /** Obtiene los datos del usuario desde el backend (sesión OAuth2) */
+  getOAuth2User(): Observable<OAuth2UserData> {
+    return this.http.get<OAuth2UserData>(`${API_BASE}/user`, { withCredentials: true });
+  }
 
   /** Envía credenciales al API y devuelve el token si son válidas */
   login(email: string, password: string): Observable<LoginResponse> {
@@ -48,10 +68,12 @@ export class AuthService {
     return !!this.getToken();
   }
 
-  /** Cierra sesión eliminando token y email del localStorage */
+  /** Cierra sesión eliminando token y datos de usuario del localStorage */
   logout(): void {
     localStorage.removeItem('token');
     localStorage.removeItem('userEmail');
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userPicture');
   }
 
   /** Guarda el email del usuario en localStorage */
@@ -62,5 +84,29 @@ export class AuthService {
   /** Obtiene el email del usuario del localStorage */
   getUserEmail(): string | null {
     return localStorage.getItem('userEmail');
+  }
+
+  /** Guarda el nombre del usuario en localStorage */
+  saveUserName(name: string): void {
+    localStorage.setItem('userName', name);
+  }
+
+  /** Obtiene el nombre del usuario del localStorage */
+  getUserName(): string | null {
+    return localStorage.getItem('userName');
+  }
+
+  /** Guarda la URL de la foto del usuario en localStorage */
+  saveUserPicture(picture: string | null): void {
+    if (picture) {
+      localStorage.setItem('userPicture', picture);
+    } else {
+      localStorage.removeItem('userPicture');
+    }
+  }
+
+  /** Obtiene la URL de la foto del usuario del localStorage */
+  getUserPicture(): string | null {
+    return localStorage.getItem('userPicture');
   }
 }

@@ -13,5 +13,7 @@ export const routes: Routes = [
   // Registro: mismo componente Auth pero mostrando el formulario de registro
   { path: 'registro', loadComponent: () => import('./pages/auth/auth.component').then(m => m.AuthComponent), data: { showRegister: true } },
   // Home: panel principal tras iniciar sesión
-  { path: 'home', loadComponent: () => import('./pages/home/home.component').then(m => m.HomeComponent) }
+  { path: 'home', loadComponent: () => import('./pages/home/home.component').then(m => m.HomeComponent) },
+  // Callback OAuth (GitHub): recibe token, name, email, picture y redirige a home
+  { path: 'auth/callback', loadComponent: () => import('./pages/auth-callback/auth-callback.component').then(m => m.AuthCallbackComponent) }
 ];
