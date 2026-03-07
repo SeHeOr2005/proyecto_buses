@@ -1,0 +1,146 @@
+/* ============================================
+   HomeComponent - Estilos del dashboard
+   Header, sección de bienvenida y cards
+   ============================================ */
+
+/* Contenedor principal: ocupa toda la altura de la ventana */
+.dashboard {
+  min-height: 100vh;
+  background: var(--color-bg);
+}
+
+/* Cabecera con gradiente azul */
+.header {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  padding: 1rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: var(--shadow-md);
+}
+
+/* Contenedor del logo/título */
+.header-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Título BusTrack en el header */
+.header-brand h1 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: white;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+/* Acciones del header: email + logout */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Email del usuario logueado */
+.user-info {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Botón de cerrar sesión */
+.btn-logout {
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  font-family: inherit;
+}
+
+/* Hover del botón logout */
+.btn-logout:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Contenido principal centrado con max-width */
+.main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Sección de bienvenida */
+.welcome-section {
+  margin-bottom: 2rem;
+}
+
+/* Título de la sección */
+.welcome-section h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.5rem 0;
+}
+
+/* Párrafo de la sección */
+.welcome-section p {
+  color: var(--color-text-muted);
+  margin: 0;
+  font-size: 1rem;
+}
+
+/* Grid responsive para las cards */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.5rem;
+}
+
+/* Card individual (Rutas, Flota, Horarios) */
+.card {
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--color-border);
+  transition: box-shadow 0.2s, transform 0.2s;
+  position: relative;
+}
+
+/* Efecto hover en cards */
+.card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+/* Título de cada card */
+.card h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.25rem 0;
+}
+
+/* Descripción de cada card */
+.card p {
+  font-size: 0.9rem;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* Badge "Próximamente" en esquina */
+.card-badge {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 0.7rem;
+  background: var(--color-border);
+  color: var(--color-text-muted);
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+}

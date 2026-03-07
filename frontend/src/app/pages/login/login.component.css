@@ -1,0 +1,224 @@
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+}
+
+.login-form-section {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  padding: 3rem;
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+}
+
+.login-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 0 0 0.5rem 0;
+  letter-spacing: -0.02em;
+}
+
+.login-card h2 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin: 0 0 0.25rem 0;
+}
+
+.subtitle {
+  color: var(--color-text-muted);
+  font-size: 1.15rem;
+  margin: 0 0 1.5rem 0;
+}
+
+.social-login {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-social {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 50px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+}
+
+.btn-social:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.btn-google {
+  background: #ffffff;
+  color: #5f6368;
+  border-color: #dadce0;
+}
+
+.btn-google:hover {
+  background: #f8f9fa;
+}
+
+.btn-microsoft {
+  background: #2f2f2f;
+  color: white;
+  border-color: #2f2f2f;
+}
+
+.btn-microsoft:hover {
+  background: #404040;
+}
+
+.btn-github {
+  background: #24292e;
+  color: white;
+  border-color: #24292e;
+}
+
+.btn-github:hover {
+  background: #363d44;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 1.5rem 0;
+  color: var(--color-text-muted);
+  font-size: 0.95rem;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.divider span {
+  padding: 0 1rem;
+}
+
+.register-link {
+  margin: 1.75rem 0 0;
+  font-size: 1.1rem;
+  color: var(--color-text-muted);
+}
+
+.register-link a {
+  color: var(--color-primary);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.register-link a:hover {
+  text-decoration: underline;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group {
+  text-align: left;
+}
+
+.form-group label {
+  font-weight: 600;
+  font-size: 1.15rem;
+  color: var(--color-text);
+}
+
+.form-group input {
+  padding: 1.1rem 1.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 1.2rem;
+  font-family: inherit;
+  background: var(--color-surface);
+  color: var(--color-text);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group input::placeholder {
+  color: #9fa8da;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(13, 71, 161, 0.15);
+}
+
+.error-alert {
+  padding: 1rem 1.25rem;
+  background: #ffebee;
+  color: var(--color-error);
+  border-radius: var(--radius);
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.btn-login {
+  padding: 1.2rem 1.5rem;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 1.25rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  font-family: inherit;
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+
+.btn-login:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(13, 71, 161, 0.35);
+}
+
+.btn-login:active {
+  transform: translateY(0);
+}
+
+.demo-hint {
+  margin: 1.5rem 0 0;
+  font-size: 1.1rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}

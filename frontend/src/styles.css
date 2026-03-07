@@ -1,0 +1,41 @@
+/* ============================================
+   BusTrack - Estilos globales
+   Variables CSS y reset para toda la aplicación
+   ============================================ */
+
+/* Variables de tema (colores, sombras, bordes) */
+:root {
+  --color-primary: #0d47a1;        /* Azul principal */
+  --color-primary-dark: #0a3d7a;   /* Azul oscuro */
+  --color-primary-light: #1976d2;  /* Azul claro */
+  --color-accent: #ff6b00;         /* Naranja acento */
+  --color-accent-hover: #e55d00;   /* Naranja hover */
+  --color-bg: #f5f7fa;             /* Fondo gris claro */
+  --color-surface: #ffffff;        /* Superficie blanca */
+  --color-text: #1a237e;           /* Texto principal */
+  --color-text-muted: #5c6bc0;     /* Texto secundario */
+  --color-border: #e8eaf6;         /* Bordes */
+  --color-error: #c62828;          /* Rojo error */
+  --color-success: #2e7d32;        /* Verde éxito */
+  --shadow-sm: 0 1px 3px rgba(13, 71, 161, 0.08);   /* Sombra pequeña */
+  --shadow-md: 0 4px 12px rgba(13, 71, 161, 0.12);  /* Sombra media */
+  --shadow-lg: 0 8px 24px rgba(13, 71, 161, 0.15);  /* Sombra grande */
+  --radius: 10px;    /* Border radius por defecto */
+  --radius-lg: 14px; /* Border radius grande */
+}
+
+/* Box-sizing para todos los elementos */
+* {
+  box-sizing: border-box;
+}
+
+/* Estilos base del body */
+body {
+  margin: 0;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}

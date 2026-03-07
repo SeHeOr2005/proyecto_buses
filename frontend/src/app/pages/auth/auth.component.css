@@ -1,0 +1,371 @@
+/* ============================================
+   AUTH COMPONENT - Estilos del formulario
+   Login y Registro con dos paneles deslizantes
+   ============================================ */
+
+/* Contenedor de la página: centra el formulario en pantalla */
+.auth-page {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f6f5f7;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  margin: -20px 0 50px;
+}
+
+/* Contenedor principal: 75-80% del viewport (80vw x 80vh) */
+.container {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.25), 0 10px 10px rgba(0, 0, 0, 0.22);
+  position: relative;
+  overflow: hidden;
+  width: 80vw;
+  height: 80vh;
+  min-width: 320px;
+  min-height: 480px;
+}
+
+/* Contenedor base para los formularios: animación de deslizamiento */
+.form-container {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Panel de inicio de sesión: ocupa mitad izquierda */
+.sign-in-container {
+  left: 0;
+  width: 50%;
+  z-index: 2;
+}
+
+/* Panel de registro: ocupa mitad izquierda, oculto por defecto */
+.sign-up-container {
+  left: 0;
+  width: 50%;
+  z-index: 1;
+  opacity: 0;
+}
+
+/* Al activar registro: login se desplaza a la derecha */
+.auth-page.right-panel-active .sign-in-container {
+  transform: translateX(100%);
+}
+
+/* Al activar registro: formulario de registro aparece */
+.auth-page.right-panel-active .sign-up-container {
+  transform: translateX(100%);
+  opacity: 1;
+  z-index: 5;
+}
+
+/* Estilos del formulario (login y registro) */
+.auth-form {
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 0 60px;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+
+/* Título del formulario */
+.auth-form h1 {
+  font-weight: bold;
+  margin: 0 0 24px;
+  font-size: 2.25rem;
+}
+
+/* Párrafo descriptivo en los overlays */
+.auth-form p {
+  font-size: 1.1rem;
+  font-weight: 100;
+  line-height: 1.5;
+  letter-spacing: 0.5px;
+  margin: 20px 0 32px;
+}
+
+/* Contenedor de botones sociales (Google, Microsoft, GitHub) */
+.social-login {
+  margin: 24px 0;
+}
+
+/* Tamaño del icono SVG dentro de cada botón */
+.social-icon {
+  width: 32px;
+  height: 32px;
+}
+
+/* Botones circulares grandes (72px) con iconos coloridos */
+.social-login .btn-social {
+  border: none;
+  border-radius: 50%;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 12px;
+  height: 72px;
+  width: 72px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Efecto hover en botones sociales */
+.social-login .btn-social:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Efecto active en botones sociales */
+.social-login .btn-social:active {
+  transform: scale(0.95);
+}
+
+/* Google: solo icono sin fondo */
+.btn-google {
+  background: transparent;
+  border: none;
+}
+
+.btn-google:hover {
+  background: transparent;
+}
+
+/* Microsoft: solo icono sin fondo */
+.btn-microsoft {
+  background: transparent;
+  border: none;
+}
+
+.btn-microsoft .social-icon {
+  width: 36px;
+  height: 36px;
+}
+
+/* GitHub: solo icono sin fondo (Octocat blanco sobre transparente) */
+.btn-github {
+  background: transparent;
+  border: none;
+  color: #24292e;
+}
+
+.btn-github:hover {
+  background: transparent;
+}
+
+/* Texto separador entre social login y email */
+.divider-text {
+  font-size: 1rem;
+  color: #999;
+  margin: 18px 0;
+}
+
+/* Campos de texto del formulario */
+.auth-form input {
+  background: #eee;
+  border: none;
+  padding: 16px 18px;
+  margin: 10px 0;
+  width: 100%;
+  font-size: 1.1rem;
+}
+
+/* Quitar outline al enfocar (se usa border en su lugar) */
+.auth-form input:focus {
+  outline: none;
+}
+
+/* Enlace "Olvidaste tu contraseña" */
+.forgot-link {
+  color: #228be6;
+  font-size: 1rem;
+  margin: 18px 0;
+  cursor: pointer;
+}
+
+/* Alerta de error (rojo) */
+.error-alert {
+  background: #ffebee;
+  color: #c62828;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 1rem;
+  width: 100%;
+  margin: 10px 0;
+}
+
+/* Alerta de éxito (verde) */
+.success-alert {
+  background: #e8f5e9;
+  color: #2e7d32;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 1rem;
+  width: 100%;
+  margin: 10px 0;
+}
+
+/* Botón principal login: ROJO */
+.btn-primary {
+  border-radius: 24px;
+  border: 1px solid #dc2626;
+  background: #dc2626;
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: bold;
+  padding: 16px 55px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: transform 0.2s ease, background 0.2s ease;
+  cursor: pointer;
+  font-family: inherit;
+  margin-top: 14px;
+}
+
+/* Efecto hover en botón principal login (rojo más oscuro) */
+.sign-in-container .btn-primary:hover {
+  background: #b91c1c;
+  transform: scale(1.02);
+}
+
+/* Efecto hover en botón principal registro (morado) */
+.sign-up-container .btn-primary:hover {
+  transform: scale(1.02);
+}
+
+/* Efecto active en botón principal */
+.btn-primary:active {
+  transform: scale(0.95);
+}
+
+/* Quitar outline del botón al enfocar */
+.btn-primary:focus {
+  outline: none;
+}
+
+/* Botón registrar: MORADO para coincidir con overlay */
+.sign-up-container .btn-register {
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+  border-color: #7c3aed;
+}
+
+/* ============================================
+   OVERLAY - Panel morado con CTAs
+   ============================================ */
+
+/* Contenedor del overlay: mitad derecha, se desliza al cambiar */
+.overlay-container {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 50%;
+  height: 100%;
+  overflow: hidden;
+  transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  z-index: 100;
+}
+
+/* Al activar registro: overlay se desplaza a la izquierda */
+.auth-page.right-panel-active .overlay-container {
+  transform: translateX(-100%);
+}
+
+/* Contenedor del overlay (sin fondo; cada panel tiene el suyo) */
+.overlay {
+  position: relative;
+  left: -100%;
+  height: 100%;
+  width: 200%;
+  transform: translateX(0);
+  transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Al activar registro: overlay se desliza para mostrar el panel correcto */
+.auth-page.right-panel-active .overlay {
+  transform: translateX(50%);
+}
+
+/* Panel genérico del overlay (Bienvenido / Hola) */
+.overlay-panel {
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0 50px;
+  height: 100%;
+  width: 50%;
+  text-align: center;
+  transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Panel izquierdo: "Bienvenido, Iniciar sesión" - ROJO */
+.overlay-left {
+  transform: translateX(-20%);
+  background: linear-gradient(135deg, #dc2626 0%, #b91c1c 50%, #991b1b 100%);
+  color: #fff;
+}
+
+/* Posición cuando está visible */
+.auth-page.right-panel-active .overlay-left {
+  transform: translateX(0);
+}
+
+/* Panel derecho: "Hola, Registrar" - MORADO (primero) */
+.overlay-right {
+  right: 0;
+  transform: translateX(0);
+  background: linear-gradient(135deg, #7c3aed 0%, #a855f7 50%, #c084fc 100%);
+  color: #fff;
+}
+
+/* Posición cuando se activa registro */
+.auth-page.right-panel-active .overlay-right {
+  transform: translateX(20%);
+}
+
+/* Título en los panels del overlay */
+.overlay-panel h1 {
+  font-size: 2.25rem;
+  font-weight: bold;
+  margin: 0 0 14px;
+}
+
+/* Párrafo en los panels del overlay */
+.overlay-panel p {
+  font-size: 1.15rem;
+  margin: 24px 0;
+}
+
+/* Botón ghost: transparente con borde blanco */
+.btn-ghost {
+  background: transparent;
+  border: 2px solid #fff;
+  color: #fff;
+  border-radius: 24px;
+  font-size: 0.95rem;
+  font-weight: bold;
+  padding: 16px 55px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 0.2s ease;
+}
+
+/* Efecto hover en botón ghost */
+.btn-ghost:hover {
+  transform: scale(1.02);
+}
+
+/* Efecto active en botón ghost */
+.btn-ghost:active {
+  transform: scale(0.95);
+}

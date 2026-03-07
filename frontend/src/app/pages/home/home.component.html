@@ -1,0 +1,41 @@
+<!-- Dashboard principal: header + contenido -->
+<div class="dashboard">
+  <!-- Cabecera con logo y acciones -->
+  <header class="header">
+    <div class="header-brand">
+      <h1>BusTrack</h1>
+    </div>
+    <div class="header-actions">
+      <span class="user-info">{{ userEmail }}</span>
+      <button type="button" (click)="onLogout()" class="btn-logout">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <!-- Contenido principal -->
+  <main class="main">
+    <!-- Sección de bienvenida -->
+    <section class="welcome-section">
+      <h2>Panel de control</h2>
+      <p>Bienvenido al sistema de gestión de transporte. Sesión iniciada correctamente.</p>
+    </section>
+
+    <!-- Grid de cards con módulos (Rutas, Flota, Horarios) -->
+    <div class="cards-grid">
+      <div class="card">
+        <h3>Rutas</h3>
+        <p>Gestión de rutas y paradas</p>
+        <span class="card-badge">Próximamente</span>
+      </div>
+      <div class="card">
+        <h3>Flota</h3>
+        <p>Control de unidades y estado</p>
+        <span class="card-badge">Próximamente</span>
+      </div>
+      <div class="card">
+        <h3>Horarios</h3>
+        <p>Programación de servicios</p>
+        <span class="card-badge">Próximamente</span>
+      </div>
+    </div>
+  </main>
+</div>
