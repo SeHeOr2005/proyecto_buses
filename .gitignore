@@ -1,0 +1,22 @@
+# Instaladores y archivos comprimidos
+*.msi
+*.zip
+
+# Credenciales sensibles - NUNCA subir
+ms-notificaciones/confidential/
+
+# Python
+ms-notificaciones/venv/
+ms-notificaciones/.venv/
+ms-notificaciones/__pycache__/
+ms-notificaciones/*.pyc
+
+# Spring Boot compilado
+ms-security/target/
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
