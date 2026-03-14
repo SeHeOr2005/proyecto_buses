@@ -81,6 +81,65 @@
   box-shadow: 0 0 0 3px rgba(13, 71, 161, 0.15);
 }
 
+/* Indicador visual de fortaleza de contraseña (HU-ENTR-1-007) */
+.password-strength {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.password-strength.visible {
+  opacity: 1;
+}
+
+.strength-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--color-border);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.strength-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.25s ease, background-color 0.2s ease;
+}
+
+.strength-fill.weak {
+  background: var(--color-error);
+}
+
+.strength-fill.medium {
+  background: var(--color-accent);
+}
+
+.strength-fill.strong {
+  background: var(--color-success);
+}
+
+.strength-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-width: 4rem;
+}
+
+.strength-label.weak {
+  color: var(--color-error);
+}
+
+.strength-label.medium {
+  color: var(--color-accent);
+}
+
+.strength-label.strong {
+  color: var(--color-success);
+}
+
 .error-alert {
   padding: 1rem 1.25rem;
   background: #ffebee;

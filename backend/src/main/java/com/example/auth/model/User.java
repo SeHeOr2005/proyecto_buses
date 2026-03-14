@@ -18,8 +18,12 @@ public class User {
     private String email;
 
     private String name;
+    private String lastName;
     private String password;
     private String picture;
+
+    /** Token de sesión actual; si se cambia la contraseña se invalida (null). */
+    private String sessionToken;
 
     public User() {
     }
@@ -55,6 +59,14 @@ public class User {
         this.name = name;
     }
 
+    public String getLastName() {
+        return lastName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
     public String getPassword() {
         return password;
     }
@@ -69,5 +81,13 @@ public class User {
 
     public void setPicture(String picture) {
         this.picture = picture;
+    }
+
+    public String getSessionToken() {
+        return sessionToken;
+    }
+
+    public void setSessionToken(String sessionToken) {
+        this.sessionToken = sessionToken;
     }
 }

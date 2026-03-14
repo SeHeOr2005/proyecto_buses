@@ -46,9 +46,7 @@
         <span class="forgot-link">¿Olvidaste tu contraseña?</span>
 
         <!-- Mensaje de error si el login falla -->
-        @if (errorMessage) {
-          <div class="error-alert">{{ errorMessage }}</div>
-        }
+        <div class="error-alert" *ngIf="errorMessage">{{ errorMessage }}</div>
 
         <!-- Botón de enviar login -->
         <button type="submit" class="btn-primary">INICIAR SESIÓN</button>
@@ -60,50 +58,56 @@
       <form (ngSubmit)="onRegisterSubmit()" class="auth-form">
         <h1>Crear cuenta</h1>
 
-        <!-- Campo de nombre completo -->
+        <!-- Nombre y apellido (obligatorios; se valida al enviar) -->
         <input
           type="text"
           [(ngModel)]="name"
           name="name"
           placeholder="Nombre"
-          required
         />
-        <!-- Campo de email -->
+        <input
+          type="text"
+          [(ngModel)]="regLastName"
+          name="regLastName"
+          placeholder="Apellido"
+        />
+        <!-- Email -->
         <input
           type="email"
           [(ngModel)]="regEmail"
           name="regEmail"
           placeholder="Email"
-          required
         />
-        <!-- Campo de contraseña -->
+        <!-- Contraseña con indicador de fortaleza -->
         <input
           type="password"
           [(ngModel)]="regPassword"
           name="regPassword"
-          placeholder="Contraseña"
-          required
+          placeholder="Contraseña (mín. 8 caracteres, may., min., número, especial)"
         />
+        <div class="password-strength" [class.visible]="regPassword.length > 0">
+          <div class="strength-bar">
+            <span class="strength-fill" [class.weak]="getRegPasswordStrength(regPassword) === 'weak'" [class.medium]="getRegPasswordStrength(regPassword) === 'medium'" [class.strong]="getRegPasswordStrength(regPassword) === 'strong'" [style.width.%]="getRegPasswordStrength(regPassword) === 'weak' ? 33 : getRegPasswordStrength(regPassword) === 'medium' ? 66 : 100"></span>
+          </div>
+          <span class="strength-label" [class.weak]="getRegPasswordStrength(regPassword) === 'weak'" [class.medium]="getRegPasswordStrength(regPassword) === 'medium'" [class.strong]="getRegPasswordStrength(regPassword) === 'strong'">{{ getRegStrengthLabel(regPassword) }}</span>
+        </div>
         <!-- Confirmación de contraseña -->
         <input
           type="password"
           [(ngModel)]="regConfirmPassword"
           name="regConfirmPassword"
           placeholder="Confirmar contraseña"
-          required
         />
 
         <!-- Mensaje de error en registro -->
-        @if (regErrorMessage) {
-          <div class="error-alert">{{ regErrorMessage }}</div>
-        }
+        <div class="error-alert" *ngIf="regErrorMessage">{{ regErrorMessage }}</div>
         <!-- Mensaje de éxito en registro -->
-        @if (regSuccessMessage) {
-          <div class="success-alert">{{ regSuccessMessage }}</div>
-        }
+        <div class="success-alert" *ngIf="regSuccessMessage">{{ regSuccessMessage }}</div>
 
         <!-- Botón de enviar registro -->
-        <button type="submit" class="btn-primary btn-register">REGISTRAR</button>
+        <button type="submit" class="btn-primary btn-register" [disabled]="isRegistering">
+          {{ isRegistering ? 'Registrando...' : 'REGISTRAR' }}
+        </button>
       </form>
     </div>
 

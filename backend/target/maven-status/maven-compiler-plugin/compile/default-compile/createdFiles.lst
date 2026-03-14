@@ -1,6 +1,14 @@
+com\example\auth\model\RegisterRequest.class
+com\example\auth\controller\GithubAuthController.class
+com\example\auth\controller\UserController.class
 com\example\auth\model\LoginRequest.class
 com\example\auth\config\SecurityConfig.class
+com\example\auth\config\TokenAuthenticationFilter.class
 com\example\auth\model\LoginResponse.class
 com\example\auth\service\AuthService.class
 com\example\auth\controller\AuthController.class
+com\example\auth\model\User.class
 com\example\auth\AuthApplication.class
+com\example\auth\repository\UserRepository.class
+com\example\auth\config\CustomOAuth2UserService.class
+com\example\auth\config\PasswordEncoderConfig.class

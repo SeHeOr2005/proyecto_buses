@@ -25,9 +25,17 @@ export class LoginComponent {
     window.location.href = 'http://localhost:8081/oauth2/authorization/google';
   }
 
+  loginGitHub(): void {
+    const clientId = 'Ov23ligZM0UoBxmlXOSG';
+    const redirectUri = encodeURIComponent('http://localhost:8081/auth/github/callback');
+    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}`;
+  }
+
   onSocialLogin(provider: string): void {
     if (provider === 'google') {
       this.loginGoogle();
+    } else if (provider === 'github') {
+      this.loginGitHub();
     } else {
       this.errorMessage = `${provider.charAt(0).toUpperCase() + provider.slice(1)}: disponible próximamente`;
     }

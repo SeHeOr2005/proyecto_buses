@@ -181,6 +181,44 @@
   outline: none;
 }
 
+/* Indicador de fortaleza de contraseña (registro) */
+.auth-form .password-strength {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: -4px 0 10px;
+  width: 100%;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.auth-form .password-strength.visible {
+  opacity: 1;
+}
+.auth-form .strength-bar {
+  flex: 1;
+  height: 6px;
+  background: #eee;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.auth-form .strength-fill {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.25s ease, background-color 0.2s ease;
+}
+.auth-form .strength-fill.weak { background: #c62828; }
+.auth-form .strength-fill.medium { background: #ff6b00; }
+.auth-form .strength-fill.strong { background: #2e7d32; }
+.auth-form .strength-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  min-width: 4rem;
+}
+.auth-form .strength-label.weak { color: #c62828; }
+.auth-form .strength-label.medium { color: #ff6b00; }
+.auth-form .strength-label.strong { color: #2e7d32; }
+
 /* Enlace "Olvidaste tu contraseña" */
 .forgot-link {
   color: #228be6;

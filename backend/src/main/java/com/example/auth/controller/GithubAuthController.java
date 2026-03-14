@@ -129,4 +129,37 @@ public class GithubAuthController {
         );
         return response.getBody();
     }
+
+    @SuppressWarnings("unchecked")
+    private String fetchPrimaryEmail(String accessToken) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("Authorization", "Bearer " + accessToken);
+        headers.set("Accept", "application/vnd.github+json");
+
+        HttpEntity<Void> request = new HttpEntity<>(headers);
+        ResponseEntity<Map[]> response = restTemplate.exchange(
+                "https://api.github.com/user/emails",
+                HttpMethod.GET,
+                request,
+                (Class<Map[]>) (Class<?>) Map[].class
+        );
+        if (response.getBody() == null) return null;
+        for (Map<String, Object> entry : response.getBody()) {
+            Boolean primary = (Boolean) entry.get("primary");
+            Boolean verified = (Boolean) entry.get("verified");
+            String email = (String) entry.get("email");
+            if (Boolean.TRUE.equals(primary) && Boolean.TRUE.equals(verified) && email != null) {
+                return email;
+            }
+        }
+        // Fallback: return any verified email
+        for (Map<String, Object> entry : response.getBody()) {
+            Boolean verified = (Boolean) entry.get("verified");
+            String email = (String) entry.get("email");
+            if (Boolean.TRUE.equals(verified) && email != null) {
+                return email;
+            }
+        }
+        return null;
+    }
 }
