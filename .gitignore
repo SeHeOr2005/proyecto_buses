@@ -7,6 +7,7 @@ ms-notificaciones/confidential/
 ms-notificaciones/client_secret_*.json
 ms-notificaciones/*.din
 ms-notificaciones/ms-notifications/
+**/.env
 
 # Python
 ms-notificaciones/venv/
