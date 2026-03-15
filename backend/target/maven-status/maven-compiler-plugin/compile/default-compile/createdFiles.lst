@@ -1,5 +1,4 @@
 com\example\auth\model\RegisterRequest.class
-com\example\auth\controller\GithubAuthController.class
 com\example\auth\controller\UserController.class
 com\example\auth\model\LoginRequest.class
 com\example\auth\config\SecurityConfig.class

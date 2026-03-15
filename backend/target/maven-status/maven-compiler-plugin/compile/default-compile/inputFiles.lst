@@ -9,6 +9,5 @@ C:\Desarrollo backend\proyecto_buses\backend\src\main\java\com\example\auth\mode
 C:\Desarrollo backend\proyecto_buses\backend\src\main\java\com\example\auth\repository\UserRepository.java
 C:\Desarrollo backend\proyecto_buses\backend\src\main\java\com\example\auth\config\PasswordEncoderConfig.java
 C:\Desarrollo backend\proyecto_buses\backend\src\main\java\com\example\auth\controller\AuthController.java
-C:\Desarrollo backend\proyecto_buses\backend\src\main\java\com\example\auth\controller\GithubAuthController.java
 C:\Desarrollo backend\proyecto_buses\backend\src\main\java\com\example\auth\controller\UserController.java
 C:\Desarrollo backend\proyecto_buses\backend\src\main\java\com\example\auth\model\User.java

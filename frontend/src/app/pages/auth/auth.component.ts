@@ -171,10 +171,9 @@ export class AuthComponent {
    * y redirige al frontend en /auth/callback con el token de sesión como query param.
    */
   loginGitHub(): void {
-    const clientId = 'Ov23ligZM0UoBxmlXOSG';
-    const redirectUri = encodeURIComponent('http://localhost:8081/auth/github/callback');
-    window.location.href = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${redirectUri}`;
+    window.location.href = 'http://localhost:8081/oauth2/authorization/github';
   }
+
 
   /**
    * Dispatcher para los botones de login social.

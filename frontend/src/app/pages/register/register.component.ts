@@ -55,6 +55,7 @@ export class RegisterComponent {
   }
 
   onSubmit(): void {
+    console.log("Formulario enviado");
     this.errorMessage = '';
     this.successMessage = '';
 
@@ -83,6 +84,7 @@ export class RegisterComponent {
     }
 
     this.isRegistering = true;
+    console.log("Enviando registro al backend...");
     this.authService.register(nameTrim, lastNameTrim, emailTrim, this.password).subscribe({
       next: () => {
         this.isRegistering = false;

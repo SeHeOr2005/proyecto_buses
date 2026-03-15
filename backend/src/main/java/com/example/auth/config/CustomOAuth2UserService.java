@@ -21,22 +21,25 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     }
 
     @Override
-    public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-        OAuth2User oauth2User = super.loadUser(userRequest);
+public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
 
-        String email = (String) oauth2User.getAttributes().get("email");
-        String name = (String) oauth2User.getAttributes().get("name");
-        String picture = (String) oauth2User.getAttributes().get("picture");
+    OAuth2User oauth2User = super.loadUser(userRequest);
+    System.out.println("OAuth attributes: " + oauth2User.getAttributes());
 
-        if (email == null || email.isBlank()) {
-            email = oauth2User.getAttribute("sub") + "@oauth.user";
-        }
-        if (name == null || name.isBlank()) {
-            name = email.split("@")[0];
-        }
+    String email = oauth2User.getAttribute("email");
+    String name = oauth2User.getAttribute("name");
+    String picture = oauth2User.getAttribute("avatar_url"); // GitHub usa avatar_url
 
-        authService.findOrCreateOAuthUser(email, name, picture);
-
-        return oauth2User;
+    if (email == null || email.isBlank()) {
+        email = oauth2User.getAttribute("login") + "@github.user";
     }
+
+    if (name == null || name.isBlank()) {
+        name = oauth2User.getAttribute("login");
+    }
+
+    authService.findOrCreateOAuthUser(email, name, picture);
+
+    return oauth2User;
+}
 }

@@ -68,9 +68,10 @@ public class SecurityConfig {
                 .addFilterBefore(tokenAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         // Rutas públicas (HTML/CSS/JS) y páginas de login
-                        .requestMatchers("/", "/login", "/auth/github/start", "/auth/github/callback").permitAll()
+                        .requestMatchers( "/","/login","/oauth2/**","/login/oauth2/**").permitAll()
                         // Cualquier otra petición requiere autenticación
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
+
                 )
                 .oauth2Login(oauth -> oauth
                         .userInfoEndpoint(u -> u.userService(customOAuth2UserService))

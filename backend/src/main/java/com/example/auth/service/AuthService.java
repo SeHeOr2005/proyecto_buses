@@ -45,6 +45,7 @@ public class AuthService {
      * @return mensaje de éxito o error
      */
     public String register(RegisterRequest request) {
+        System.out.println("Intentando registrar: " + request.getEmail());
         String emailNorm = request.getEmail().trim().toLowerCase();
         if (userRepository.existsByEmail(emailNorm)) {
             return "Ya existe una cuenta con ese email";
