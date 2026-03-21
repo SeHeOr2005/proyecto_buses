@@ -144,7 +144,7 @@ def send_role_change():
         creds   = authenticate_gmail()
         service = build('gmail', 'v1', credentials=creds)
         message = build_message(DEFAULT_SENDER, to,
-                                'Cambio en sus roles y permisos - Sistema SHO',
+                                'Cambio en sus roles y permisos - Flash Bus',
                                 body, is_html=True)
         result  = send_gmail(service, message)
         return jsonify({'success': True, 'id': result['id']}), 200
@@ -189,7 +189,7 @@ def send_permission_change():
         creds   = authenticate_gmail()
         service = build('gmail', 'v1', credentials=creds)
         message = build_message(DEFAULT_SENDER, to,
-                                'Actualización de permisos - Sistema SHO',
+                                'Actualización de permisos - Flash Bus',
                                 body, is_html=True)
         result  = send_gmail(service, message)
         return jsonify({'success': True, 'id': result['id']}), 200
