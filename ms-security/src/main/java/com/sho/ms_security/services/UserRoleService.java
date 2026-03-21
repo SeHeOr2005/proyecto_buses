@@ -69,4 +69,9 @@ public class UserRoleService {
     public List<UserRole> getRolesByUser(String userId) {
         return this.theUserRoleRepository.getRolesByUser(userId);
     }
+
+    // Obtener TODOS los user-roles (para carga en bulk desde el frontend)
+    public List<UserRole> getAllUserRoles() {
+        return this.theUserRoleRepository.findAll();
+    }
 }
