@@ -18,6 +18,14 @@ public class SecurityInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request,
                              HttpServletResponse response,
                              Object handler) throws Exception {
+
+        // Dejar pasar siempre las solicitudes preflight CORS (OPTIONS)
+        // El navegador las envía antes de cada request con headers personalizados (Authorization)
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            response.setStatus(HttpServletResponse.SC_OK);
+            return true;
+        }
+
         boolean allowed = this.validatorService.validationRolePermission(
                 request,
                 request.getRequestURI(),

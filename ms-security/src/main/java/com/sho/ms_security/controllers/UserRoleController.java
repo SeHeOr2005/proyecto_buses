@@ -18,6 +18,13 @@ public class UserRoleController {
     @Autowired
     private UserRoleService theUserRoleService;
 
+    // Obtener TODOS los user-roles en una sola llamada (evita N+1 peticiones desde el frontend)
+    @GetMapping
+    public ResponseEntity<?> getAllUserRoles() {
+        List<UserRole> allRoles = this.theUserRoleService.getAllUserRoles();
+        return ResponseEntity.ok(allRoles);
+    }
+
     // HU-ENTR-1-002: Ver roles de un usuario con sus roles actuales
     @GetMapping("user/{userId}")
     public ResponseEntity<?> getRolesByUser(@PathVariable String userId) {
