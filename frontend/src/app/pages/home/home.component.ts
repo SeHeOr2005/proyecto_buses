@@ -85,7 +85,7 @@ export class HomeComponent implements OnInit {
   onLogout(): void {
     this.authService.logout();
     if (this.sessionType === 'oauth2') {
-      window.location.href = 'http://localhost:8081/logout';
+      window.location.href = 'http://localhost:8080/logout';
     } else {
       this.router.navigate(['/login']);
     }

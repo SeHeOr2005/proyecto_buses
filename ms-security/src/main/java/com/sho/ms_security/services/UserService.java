@@ -7,6 +7,7 @@ import com.sho.ms_security.repositories.ProfileRepository;
 import com.sho.ms_security.repositories.SessionRepository;
 import com.sho.ms_security.repositories.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,7 +25,7 @@ public class UserService {
     private SessionRepository theSessionRepository;
 
     @Autowired
-    private EncryptionService theEncryption;
+    private PasswordEncoder passwordEncoder;
 
     public List<User> find() {
         return this.theUserRepository.findAll();
@@ -35,12 +36,13 @@ public class UserService {
     }
 
     public User create(User newUser) {
-        // Validar que el email no esté ya registrado
         User existing = this.theUserRepository.getUserByEmail(newUser.getEmail());
         if (existing != null) {
             return null;
         }
-        newUser.setPassword(this.theEncryption.convertSHA256(newUser.getPassword()));
+        if (newUser.getPassword() != null) {
+            newUser.setPassword(this.passwordEncoder.encode(newUser.getPassword()));
+        }
         return this.theUserRepository.save(newUser);
     }
 
@@ -49,7 +51,9 @@ public class UserService {
         if (actualUser != null) {
             actualUser.setName(newUser.getName());
             actualUser.setEmail(newUser.getEmail());
-            actualUser.setPassword(this.theEncryption.convertSHA256(newUser.getPassword()));
+            if (newUser.getPassword() != null) {
+                actualUser.setPassword(this.passwordEncoder.encode(newUser.getPassword()));
+            }
             this.theUserRepository.save(actualUser);
             return actualUser;
         }

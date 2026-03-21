@@ -31,10 +31,10 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 
 /** URL base del API de autenticación en el backend */
-const API_URL = 'http://localhost:8081/api/auth';
+const API_URL = 'http://localhost:8080/api/auth';
 
 /** URL base del backend (para endpoints OAuth2) */
-const API_BASE = 'http://localhost:8081';
+const API_BASE = 'http://localhost:8080';
 
 /**
  * Estructura de la respuesta del endpoint POST /api/auth/login.

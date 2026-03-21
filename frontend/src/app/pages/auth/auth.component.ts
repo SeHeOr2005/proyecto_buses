@@ -160,18 +160,11 @@ export class AuthComponent {
    * al frontend en /home con la sesión establecida.
    */
   loginGoogle(): void {
-    window.location.href = 'http://localhost:8081/oauth2/authorization/google';
+    window.location.href = 'http://localhost:8080/oauth2/authorization/google';
   }
 
-  /**
-   * Inicia el flujo OAuth2 con GitHub.
-   * Redirige directamente a GitHub con el client_id de la app registrada.
-   * GitHub redirige al backend en /auth/github/callback con el código de autorización.
-   * El backend intercambia el código por un token, crea/actualiza el usuario en MongoDB
-   * y redirige al frontend en /auth/callback con el token de sesión como query param.
-   */
   loginGitHub(): void {
-    window.location.href = 'http://localhost:8081/oauth2/authorization/github';
+    window.location.href = 'http://localhost:8080/oauth2/authorization/github';
   }
 
 
@@ -413,6 +406,6 @@ export class AuthComponent {
     if (typeof err?.error === 'string') return err.error;
     if (err?.message) return err.message;
     if (err?.error?.errors?.length) return err.error.errors.join('. ');
-    return 'No se pudo conectar con el servidor. Compruebe que el backend esté en ejecución en http://localhost:8081';
+    return 'No se pudo conectar con el servidor. Compruebe que el backend esté en ejecución en http://localhost:8080';
   }
 }

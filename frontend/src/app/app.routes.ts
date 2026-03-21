@@ -69,10 +69,17 @@ export const routes: Routes = [
   },
 
   /**
-   * Callback OAuth2 para GitHub (y potencialmente otros proveedores).
-   * El backend redirige aquí tras el login social con query params:
-   *   ?token=<sessionToken>&name=<nombre>&email=<email>&picture=<url>
-   * El AuthCallbackComponent lee los params, guarda la sesión y redirige a /home.
+   * Callback OAuth2: el backend redirige aquí tras login social con ?token=...
+   * Ruta: /auth-callback
+   */
+  {
+    path: 'auth-callback',
+    loadComponent: () =>
+      import('./pages/auth-callback/auth-callback.component').then(m => m.AuthCallbackComponent)
+  },
+
+  /**
+   * Alias para compatibilidad con rutas anteriores.
    */
   {
     path: 'auth/callback',

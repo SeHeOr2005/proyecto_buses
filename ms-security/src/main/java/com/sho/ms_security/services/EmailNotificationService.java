@@ -7,7 +7,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
-
 @Service
 public class EmailNotificationService {
 
@@ -50,6 +49,30 @@ public class EmailNotificationService {
                 notificationServiceUrl + "/send-permission-change", body, Map.class);
         } catch (Exception e) {
             System.err.println("Error al enviar notificación de permiso: " + e.getMessage());
+        }
+    }
+
+    /**
+     * HU-ENTR-1-007: Envía email de bienvenida al registrarse un nuevo usuario.
+     */
+    @Async
+    public void sendWelcomeEmail(String userEmail, String userName) {
+        try {
+            String body = "<html><body>"
+                + "<p>Estimado/a <strong>" + userName + "</strong>,</p>"
+                + "<p>Tu cuenta ha sido creada exitosamente en el Sistema de Transporte SHO.</p>"
+                + "<p>Ya puedes iniciar sesión con tu email y contraseña.</p>"
+                + "<br><p>Saludos,<br><strong>Equipo de Administración</strong></p>"
+                + "</body></html>";
+
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("to",      userEmail);
+            payload.put("subject", "Bienvenido al Sistema de Transporte SHO");
+            payload.put("body",    body);
+            payload.put("is_html", true);
+            restTemplate.postForObject(notificationServiceUrl + "/send-email", payload, Map.class);
+        } catch (Exception e) {
+            System.err.println("Error al enviar email de bienvenida: " + e.getMessage());
         }
     }
 }

@@ -117,6 +117,6 @@ export class RegisterComponent {
         || ((err.error as { errors?: string[] }).errors?.join('. '));
       if (msg) return msg;
     }
-    return 'No se pudo conectar con el servidor. Compruebe que el backend esté en ejecución en http://localhost:8081';
+    return 'No se pudo conectar con el servidor. Compruebe que el backend esté en ejecución en http://localhost:8080';
   }
 }

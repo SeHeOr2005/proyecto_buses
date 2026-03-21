@@ -30,10 +30,15 @@ public class DataInitializer implements CommandLineRunner {
     private RolePermissionRepository rolePermissionRepository;
 
     @Override
-    public void run(String... args) throws Exception {
-        initializeDefaultRoles();
-        initializeDefaultPermissions();
-        initializeAdminRolePermissions();
+    public void run(String... args) {
+        try {
+            initializeDefaultRoles();
+            initializeDefaultPermissions();
+            initializeAdminRolePermissions();
+        } catch (Exception e) {
+            System.err.println("[DataInitializer] No se pudo conectar a MongoDB al iniciar: " + e.getMessage());
+            System.err.println("[DataInitializer] La aplicación continúa, pero los datos por defecto no fueron creados.");
+        }
     }
 
     /**
