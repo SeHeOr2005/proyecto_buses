@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class RolePermissionService {
@@ -69,20 +68,18 @@ public class RolePermissionService {
     }
 
     // HU-ENTR-1-003: Obtener permisos de un rol específico
-    // Usamos findAll() + filtro en Java para evitar problemas con @DBRef en Spring Data MongoDB
     public List<RolePermission> getPermissionsByRole(String roleId) {
-        return this.theRolePermissionRepository.findAll()
-                .stream()
-                .filter(rp -> rp.getRole() != null && roleId.equals(rp.getRole().getId()))
-                .collect(Collectors.toList());
+        return this.theRolePermissionRepository.getPermissionsByRole(roleId);
+    }
+
+    // Obtener todos los role-permissions (para carga bulk desde el frontend)
+    public List<RolePermission> getAll() {
+        return this.theRolePermissionRepository.findAll();
     }
 
     // Notifica a todos los usuarios que tienen el rol modificado
     private void notifyUsersOfPermissionChange(String roleId, String roleName) {
-        List<UserRole> userRoles = this.theUserRoleRepository.findAll()
-                .stream()
-                .filter(ur -> ur.getRole() != null && roleId.equals(ur.getRole().getId()))
-                .collect(Collectors.toList());
+        List<UserRole> userRoles = this.theUserRoleRepository.getUsersByRole(roleId);
         for (UserRole ur : userRoles) {
             if (ur.getUser() != null) {
                 emailNotificationService.sendPermissionChangeNotification(
