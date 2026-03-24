@@ -10,7 +10,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class ValidatorsService {
@@ -19,10 +18,10 @@ public class ValidatorsService {
     private JwtService jwtService;
 
     @Autowired
-    private PermissionRepository thePermissionRepository;
+    private UserRepository theUserRepository;
 
     @Autowired
-    private UserRepository theUserRepository;
+    private PermissionRepository thePermissionRepository;
 
     @Autowired
     private RolePermissionRepository theRolePermissionRepository;
@@ -39,52 +38,55 @@ public class ValidatorsService {
     public boolean validationRolePermission(HttpServletRequest request,
                                             String url,
                                             String method) {
-        boolean success = false;
-        User theUser = this.getUser(request);
-        if (theUser != null) {
-            // Normalizar URLs reemplazando IDs de MongoDB y números con "?"
-            url = url.replaceAll("[0-9a-fA-F]{24}|\\d+", "?");
-            Permission thePermission = this.thePermissionRepository.getPermission(url, method);
+        // Verificar que el usuario existe en la BD (invalida acceso si fue eliminado)
+        String userId = getVerifiedUserId(request);
+        if (userId == null) return false;
 
-            // HU-ENTR-1-002: Los permisos se acumulan si tiene múltiples roles
-            // Usamos findAll() + filtro en Java para evitar problemas con @DBRef en Spring Data MongoDB
-            final String userId = theUser.getId();
-            List<UserRole> roles = this.theUserRoleRepository.findAll()
-                    .stream()
-                    .filter(ur -> ur.getUser() != null && userId.equals(ur.getUser().getId()))
-                    .collect(Collectors.toList());
+        // Normalizar URLs reemplazando IDs de MongoDB y números con "?"
+        url = url.replaceAll("[0-9a-fA-F]{24}|\\d+", "?");
+        Permission thePermission = this.thePermissionRepository.getPermission(url, method);
+        if (thePermission == null) return false;
 
-            int i = 0;
-            while (i < roles.size() && !success) {
-                UserRole actual = roles.get(i);
-                Role theRole = actual.getRole();
-                if (theRole != null && thePermission != null) {
-                    final String roleId = theRole.getId();
-                    final String permId = thePermission.getId();
-                    // HU-ENTR-1-003: Cambios en permisos aplican inmediatamente (consulta BD en cada request)
-                    RolePermission theRolePermission = this.theRolePermissionRepository.findAll()
-                            .stream()
-                            .filter(rp -> rp.getRole() != null && roleId.equals(rp.getRole().getId())
-                                    && rp.getPermission() != null && permId.equals(rp.getPermission().getId()))
-                            .findFirst()
-                            .orElse(null);
-                    if (theRolePermission != null) {
-                        success = true;
-                    }
-                }
-                i++;
+        // Consulta dirigida: solo los roles de este usuario, sin cargar toda la colección
+        List<UserRole> roles = this.theUserRoleRepository.getRolesByUser(userId);
+
+        for (UserRole ur : roles) {
+            Role theRole = ur.getRole();
+            if (theRole != null) {
+                // Consulta dirigida: busca exactamente el par (rol, permiso), sin cargar toda la colección
+                RolePermission rp = this.theRolePermissionRepository
+                        .getRolePermission(theRole.getId(), thePermission.getId());
+                if (rp != null) return true;
             }
         }
-        return success;
+        return false;
+    }
+
+    /**
+     * Extrae el userId del JWT y verifica que el usuario todavía exista en la BD.
+     * Garantiza que un usuario eliminado pierda acceso inmediatamente,
+     * sin importar que su token aún no haya expirado.
+     */
+    private String getVerifiedUserId(HttpServletRequest request) {
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
+            String token = authHeader.substring(BEARER_PREFIX.length());
+            User userFromToken = jwtService.getUserFromToken(token);
+            if (userFromToken != null) {
+                boolean exists = this.theUserRepository.existsById(userFromToken.getId());
+                return exists ? userFromToken.getId() : null;
+            }
+        }
+        return null;
     }
 
     public User getUser(final HttpServletRequest request) {
         String authorizationHeader = request.getHeader("Authorization");
         if (authorizationHeader != null && authorizationHeader.startsWith(BEARER_PREFIX)) {
             String token = authorizationHeader.substring(BEARER_PREFIX.length());
-            User theUserFromToken = jwtService.getUserFromToken(token);
-            if (theUserFromToken != null) {
-                return this.theUserRepository.findById(theUserFromToken.getId()).orElse(null);
+            User userFromToken = jwtService.getUserFromToken(token);
+            if (userFromToken != null) {
+                return this.theUserRepository.findById(userFromToken.getId()).orElse(null);
             }
         }
         return null;

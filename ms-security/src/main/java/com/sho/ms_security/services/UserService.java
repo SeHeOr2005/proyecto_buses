@@ -1,11 +1,15 @@
 package com.sho.ms_security.services;
 
 import com.sho.ms_security.models.Profile;
+import com.sho.ms_security.models.Role;
 import com.sho.ms_security.models.Session;
 import com.sho.ms_security.models.User;
+import com.sho.ms_security.models.UserRole;
 import com.sho.ms_security.repositories.ProfileRepository;
+import com.sho.ms_security.repositories.RoleRepository;
 import com.sho.ms_security.repositories.SessionRepository;
 import com.sho.ms_security.repositories.UserRepository;
+import com.sho.ms_security.repositories.UserRoleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,6 +26,12 @@ public class UserService {
 
     @Autowired
     private SessionRepository theSessionRepository;
+
+    @Autowired
+    private RoleRepository theRoleRepository;
+
+    @Autowired
+    private UserRoleRepository theUserRoleRepository;
 
     @Autowired
     private EncryptionService theEncryption;
@@ -41,7 +51,12 @@ public class UserService {
             return null;
         }
         newUser.setPassword(this.theEncryption.convertSHA256(newUser.getPassword()));
-        return this.theUserRepository.save(newUser);
+        User saved = this.theUserRepository.save(newUser);
+        Role ciudadano = this.theRoleRepository.findByName("CIUDADANO");
+        if (ciudadano != null) {
+            this.theUserRoleRepository.save(new UserRole(saved, ciudadano));
+        }
+        return saved;
     }
 
     public User update(String id, User newUser) {
@@ -63,6 +78,28 @@ public class UserService {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Asigna el rol CIUDADANO a todos los usuarios que aún no lo tengan.
+     * Útil como migración de datos para usuarios existentes.
+     */
+    public int assignCiudadanoToAll() {
+        Role ciudadano = this.theRoleRepository.findByName("CIUDADANO");
+        if (ciudadano == null) return 0;
+        List<User> users = this.theUserRepository.findAll();
+        int count = 0;
+        for (User user : users) {
+            List<com.sho.ms_security.models.UserRole> existing =
+                    this.theUserRoleRepository.getRolesByUser(user.getId());
+            boolean alreadyHasRole = existing.stream()
+                    .anyMatch(ur -> ur.getRole() != null && ciudadano.getId().equals(ur.getRole().getId()));
+            if (!alreadyHasRole) {
+                this.theUserRoleRepository.save(new UserRole(user, ciudadano));
+                count++;
+            }
+        }
+        return count;
     }
 
     // HU-ENTR-1-002: Búsqueda por nombre o email

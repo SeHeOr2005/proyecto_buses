@@ -90,6 +90,13 @@ public class UserController {
                 .body(Map.of("message", "User or Profile not found"));
     }
 
+    // Migración: asigna rol CIUDADANO a todos los usuarios que no lo tengan
+    @PostMapping("migrate/assign-ciudadano")
+    public ResponseEntity<Map<String, Object>> migrateCiudadano() {
+        int count = this.theUserService.assignCiudadanoToAll();
+        return ResponseEntity.ok(Map.of("assigned", count));
+    }
+
     @PostMapping("{userId}/session/{sessionId}")
     public ResponseEntity<Map<String, String>> addUserSession(
             @PathVariable String userId,

@@ -18,6 +18,12 @@ public class RolePermissionController {
     @Autowired
     private RolePermissionService theService;
 
+    // Obtener todos los role-permissions en una llamada (evita N+1 desde el frontend)
+    @GetMapping
+    public ResponseEntity<?> getAll() {
+        return ResponseEntity.ok(this.theService.getAll());
+    }
+
     // HU-ENTR-1-003: Consultar permisos específicos de un rol
     @GetMapping("role/{roleId}")
     public ResponseEntity<?> getPermissionsByRole(@PathVariable String roleId) {
