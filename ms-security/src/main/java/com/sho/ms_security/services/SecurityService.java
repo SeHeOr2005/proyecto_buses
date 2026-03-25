@@ -52,7 +52,7 @@ public class SecurityService {
     @Value("${jwt.expiration}")
     private Long jwtExpiration;
 
-    @Value("${oauth.allowed-providers:google.com,microsoft.com}")
+    @Value("${oauth.allowed-providers:google.com,microsoft.com,github.com}")
     private String allowedOAuthProviders;
 
     public String login(User theNewUser) {
