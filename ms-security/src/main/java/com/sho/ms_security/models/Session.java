@@ -13,8 +13,13 @@ public class Session {
     @Id
     private String id;
     private String token;
+    private String jti;
     private Date expiration;
     private String code2FA;
+    private String provider;
+    private String deviceInfo;
+    private String ip;
+    private Date revokedAt;
 
     @DBRef
     private User user;

@@ -16,7 +16,14 @@ public class WebConfig implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(securityInterceptor)
                 .addPathPatterns("/api/**")
+                .addPathPatterns("/roles/**")
+                .addPathPatterns("/permissions/**")
+                .addPathPatterns("/role-permission/**")
+                .addPathPatterns("/user-role/**")
+                .addPathPatterns("/profiles/**")
+                .addPathPatterns("/sessions/**")
                 .excludePathPatterns("/api/public/**")
-                .excludePathPatterns("/api/users/register");
+                .excludePathPatterns("/api/users/register")
+                .excludePathPatterns("/security/**");
     }
 }

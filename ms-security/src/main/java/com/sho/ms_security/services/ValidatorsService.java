@@ -3,6 +3,7 @@ package com.sho.ms_security.services;
 import com.sho.ms_security.models.*;
 import com.sho.ms_security.repositories.PermissionRepository;
 import com.sho.ms_security.repositories.RolePermissionRepository;
+import com.sho.ms_security.repositories.SessionRepository;
 import com.sho.ms_security.repositories.UserRepository;
 import com.sho.ms_security.repositories.UserRoleRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,6 +29,9 @@ public class ValidatorsService {
 
     @Autowired
     private UserRoleRepository theUserRoleRepository;
+
+    @Autowired
+    private SessionRepository theSessionRepository;
 
     private static final String BEARER_PREFIX = "Bearer ";
 
@@ -71,10 +75,15 @@ public class ValidatorsService {
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith(BEARER_PREFIX)) {
             String token = authHeader.substring(BEARER_PREFIX.length());
+            if (!jwtService.validateToken(token) || this.theSessionRepository.findActiveByToken(token) == null) {
+                return null;
+            }
             User userFromToken = jwtService.getUserFromToken(token);
             if (userFromToken != null) {
-                boolean exists = this.theUserRepository.existsById(userFromToken.getId());
-                return exists ? userFromToken.getId() : null;
+                User user = this.theUserRepository.findById(userFromToken.getId()).orElse(null);
+                if (user != null && !Boolean.FALSE.equals(user.getActive())) {
+                    return user.getId();
+                }
             }
         }
         return null;
@@ -84,9 +93,15 @@ public class ValidatorsService {
         String authorizationHeader = request.getHeader("Authorization");
         if (authorizationHeader != null && authorizationHeader.startsWith(BEARER_PREFIX)) {
             String token = authorizationHeader.substring(BEARER_PREFIX.length());
+            if (!jwtService.validateToken(token) || this.theSessionRepository.findActiveByToken(token) == null) {
+                return null;
+            }
             User userFromToken = jwtService.getUserFromToken(token);
             if (userFromToken != null) {
-                return this.theUserRepository.findById(userFromToken.getId()).orElse(null);
+                User user = this.theUserRepository.findById(userFromToken.getId()).orElse(null);
+                if (user != null && !Boolean.FALSE.equals(user.getActive())) {
+                    return user;
+                }
             }
         }
         return null;

@@ -97,6 +97,7 @@ public class DataInitializer implements CommandLineRunner {
                 new String[]{"/role-permission/?",                    "DELETE", "roles"},
 
                 // ── Gestión de usuarios-roles ──
+                new String[]{"/user-role",                      "GET",    "usuarios"},
                 new String[]{"/user-role/user/?",              "GET",    "usuarios"},
                 new String[]{"/user-role/user/?/role/?",       "POST",   "usuarios"},
                 new String[]{"/user-role/?",                   "DELETE", "usuarios"},

@@ -4,6 +4,8 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.Date;
+
 @Data
 @Document
 public class User {
@@ -12,6 +14,11 @@ public class User {
     private String name;
     private String email;
     private String password;
+    private String firebaseUid;
+    private String authProvider;
+    private Boolean emailVerified;
+    private Boolean active = true;
+    private Date lastLoginAt;
 
     public User() {}
 

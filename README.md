@@ -50,9 +50,13 @@ MONGODB_DATABASE=db_security
 JWT_SECRET=clave_secreta_minimo_32_caracteres
 JWT_EXPIRATION=3600000
 NOTIFICATION_SERVICE_URL=http://localhost:5000
+FIREBASE_PROJECT_ID=flashbuslogin
+FIREBASE_CREDENTIALS_PATH=C:\\ruta\\a\\firebase-service-account.json
 ```
 
 > Las variables de entorno se cargan automáticamente al ejecutar con el script de Maven.
+>
+> Para OAuth con Firebase (Google/correo-contraseña), descarga una credencial de **Service Account** desde Firebase Console y define `FIREBASE_CREDENTIALS_PATH` apuntando al JSON.
 
 ### Ejecutar
 
@@ -77,6 +81,7 @@ export JWT_SECRET=tu_clave_secreta
 | Método | Endpoint | Auth | Descripción |
 |---|---|---|---|
 | POST | `/security/login` | No | Obtener JWT |
+| POST | `/security/oauth/login` | No | Login con `firebaseIdToken` (Firebase Auth) |
 | POST | `/api/users/register` | No | Registrar primer usuario |
 | GET | `/api/users` | Sí | Listar usuarios |
 | GET | `/api/users/search?query=` | Sí | Buscar por nombre o email |
