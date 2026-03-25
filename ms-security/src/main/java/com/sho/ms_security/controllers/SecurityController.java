@@ -54,6 +54,10 @@ public class SecurityController {
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             LOGGER.error("Error en /security/oauth/login", e);
+            if (e instanceof IllegalArgumentException) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(Map.of("error", "Proveedor OAuth no permitido", "detail", e.getMessage()));
+            }
             if (e.getClass().getSimpleName().contains("FirebaseAuthException")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Token OAuth invalido", "detail", e.getMessage()));

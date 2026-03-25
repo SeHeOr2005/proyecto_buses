@@ -21,6 +21,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 public class SecurityService {
@@ -49,6 +52,9 @@ public class SecurityService {
     @Value("${jwt.expiration}")
     private Long jwtExpiration;
 
+    @Value("${oauth.allowed-providers:google.com,microsoft.com}")
+    private String allowedOAuthProviders;
+
     public String login(User theNewUser) {
         User theActualUser = this.theUserRepository.getUserByEmail(theNewUser.getEmail());
         if (theActualUser != null &&
@@ -66,13 +72,17 @@ public class SecurityService {
     public HashMap<String, Object> oauthLogin(String firebaseIdToken)
             throws FirebaseAuthException, IOException {
         FirebaseToken firebaseToken = this.firebaseAuthService.verifyIdToken(firebaseIdToken);
-        User user = upsertOAuthUser(firebaseToken);
+        String provider = this.firebaseAuthService.getProvider(firebaseToken);
+        if (!isAllowedOAuthProvider(provider)) {
+            throw new IllegalArgumentException("Proveedor OAuth no permitido: " + provider);
+        }
+
+        User user = upsertOAuthUser(firebaseToken, provider);
         if (user == null) {
             return null;
         }
 
         String token = this.theJwtService.generateToken(user);
-        String provider = this.firebaseAuthService.getProvider(firebaseToken);
         createSession(user, token, provider);
 
         HashMap<String, Object> response = new HashMap<>();
@@ -114,7 +124,7 @@ public class SecurityService {
         return true;
     }
 
-    private User upsertOAuthUser(FirebaseToken firebaseToken) {
+    private User upsertOAuthUser(FirebaseToken firebaseToken, String provider) {
         String firebaseUid = firebaseToken.getUid();
         String email = firebaseToken.getEmail();
         if (!StringUtils.hasText(firebaseUid) || !StringUtils.hasText(email)) {
@@ -138,7 +148,7 @@ public class SecurityService {
         }
 
         user.setFirebaseUid(firebaseUid);
-        user.setAuthProvider(this.firebaseAuthService.getProvider(firebaseToken));
+        user.setAuthProvider(provider);
         user.setEmailVerified(Boolean.TRUE.equals(firebaseToken.getClaims().get("email_verified")));
         user.setLastLoginAt(new Date());
 
@@ -170,6 +180,19 @@ public class SecurityService {
         session.setProvider(provider);
         session.setUser(user);
         this.theSessionRepository.save(session);
+    }
+
+    private boolean isAllowedOAuthProvider(String provider) {
+        if (!StringUtils.hasText(provider)) {
+            return false;
+        }
+
+        Set<String> allowed = Stream.of(allowedOAuthProviders.split(","))
+                .map(String::trim)
+                .filter(StringUtils::hasText)
+                .collect(Collectors.toSet());
+
+        return allowed.contains(provider);
     }
 
     private List<String> getRolesByUserId(String userId) {
