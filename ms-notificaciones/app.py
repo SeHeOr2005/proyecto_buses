@@ -197,5 +197,48 @@ def send_permission_change():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/send-account-confirmation', methods=['POST'])
+def send_account_confirmation():
+    """
+    Notificación de confirmación de cuenta creada.
+    Body JSON:
+    {
+        "to":   "usuario@correo.com",
+        "name": "Nombre del usuario"
+    }
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos'}), 400
+
+    to = data.get('to')
+    name = data.get('name', 'Usuario')
+
+    if not to:
+        return jsonify({'error': 'El campo "to" es requerido'}), 400
+
+    body = f"""
+    <html><body>
+    <p>Hola <strong>{name}</strong>,</p>
+    <p>Tu cuenta en <strong>Flash Bus</strong> fue creada exitosamente.</p>
+    <p>Ya puedes ingresar a la plataforma con tu correo y contraseña.</p>
+    <br>
+    <p>Si no reconoces este registro, contacta al equipo de soporte.</p>
+    <p>Saludos,<br><strong>Equipo Flash Bus</strong></p>
+    </body></html>
+    """
+
+    try:
+        creds = authenticate_gmail()
+        service = build('gmail', 'v1', credentials=creds)
+        message = build_message(DEFAULT_SENDER, to,
+                                'Confirmación de cuenta - Flash Bus',
+                                body, is_html=True)
+        result = send_gmail(service, message)
+        return jsonify({'success': True, 'id': result['id']}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
