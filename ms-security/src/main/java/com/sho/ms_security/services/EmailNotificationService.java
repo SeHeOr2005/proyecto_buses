@@ -52,4 +52,17 @@ public class EmailNotificationService {
             System.err.println("Error al enviar notificación de permiso: " + e.getMessage());
         }
     }
+
+    @Async
+    public void sendAccountConfirmationNotification(String userEmail, String userName) {
+        try {
+            Map<String, String> body = new HashMap<>();
+            body.put("to", userEmail);
+            body.put("name", userName);
+            restTemplate.postForObject(
+                notificationServiceUrl + "/send-account-confirmation", body, Map.class);
+        } catch (Exception e) {
+            System.err.println("Error al enviar confirmación de cuenta: " + e.getMessage());
+        }
+    }
 }

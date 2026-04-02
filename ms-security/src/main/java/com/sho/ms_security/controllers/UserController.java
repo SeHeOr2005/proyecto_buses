@@ -48,12 +48,24 @@ public class UserController {
     // Endpoint público para crear el primer usuario / registro sin token
     @PostMapping("register")
     public ResponseEntity<?> register(@RequestBody User newUser) {
-        User created = this.theUserService.create(newUser);
-        if (created == null) {
-            return ResponseEntity.status(HttpStatus.CONFLICT)
-                    .body(Map.of("error", "El correo ya está registrado"));
+        try {
+            User created = this.theUserService.create(newUser);
+            if (created == null) {
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body(Map.of("error", "El correo ya está registrado"));
+            }
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("id", created.getId());
+            response.put("name", created.getName());
+            response.put("email", created.getEmail());
+            response.put("message", "Cuenta creada correctamente");
+
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", ex.getMessage()));
         }
-        return ResponseEntity.ok(created);
     }
 
     @PutMapping("{id}")

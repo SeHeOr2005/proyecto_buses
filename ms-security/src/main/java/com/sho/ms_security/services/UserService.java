@@ -12,6 +12,7 @@ import com.sho.ms_security.repositories.UserRepository;
 import com.sho.ms_security.repositories.UserRoleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -36,6 +37,9 @@ public class UserService {
     @Autowired
     private EncryptionService theEncryption;
 
+    @Autowired
+    private EmailNotificationService emailNotificationService;
+
     public List<User> find() {
         return this.theUserRepository.findAll();
     }
@@ -45,6 +49,14 @@ public class UserService {
     }
 
     public User create(User newUser) {
+        if (newUser == null || !StringUtils.hasText(newUser.getEmail()) || !StringUtils.hasText(newUser.getPassword())) {
+            throw new IllegalArgumentException("El correo y la contraseña son obligatorios");
+        }
+
+        if (!isPasswordValid(newUser.getPassword())) {
+            throw new IllegalArgumentException("La contraseña debe tener minimo 8 caracteres, una mayuscula, un numero y un caracter especial");
+        }
+
         // Validar que el email no esté ya registrado
         User existing = this.theUserRepository.getUserByEmail(newUser.getEmail());
         if (existing != null) {
@@ -56,6 +68,8 @@ public class UserService {
         if (ciudadano != null) {
             this.theUserRoleRepository.save(new UserRole(saved, ciudadano));
         }
+
+        emailNotificationService.sendAccountConfirmationNotification(saved.getEmail(), saved.getName());
         return saved;
     }
 
@@ -149,5 +163,15 @@ public class UserService {
             return true;
         }
         return false;
+    }
+
+    private boolean isPasswordValid(String password) {
+        if (!StringUtils.hasText(password)) {
+            return false;
+        }
+        return password.length() >= 8
+                && password.matches(".*[A-Z].*")
+                && password.matches(".*\\d.*")
+                && password.matches(".*[^A-Za-z0-9].*");
     }
 }
