@@ -1,10 +1,11 @@
 package com.sho.ms_security.controllers;
 
+import com.sho.ms_security.models.LoginRequest;
 import com.sho.ms_security.models.OAuthLoginRequest;
 import com.sho.ms_security.models.User;
+import com.sho.ms_security.services.RecaptchaVerificationService;
 import com.sho.ms_security.services.SecurityService;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -26,17 +27,32 @@ public class SecurityController {
     @Autowired
     private SecurityService theSecurityService;
 
+    @Autowired
+    private RecaptchaVerificationService recaptchaVerificationService;
+
     @PostMapping("login")
-    public HashMap<String, Object> login(@RequestBody User theNewUser,
-                                         final HttpServletResponse response) throws IOException {
-        HashMap<String, Object> theResponse = new HashMap<>();
-        String token = this.theSecurityService.login(theNewUser);
-        if (token != null) {
-            theResponse.put("token", token);
-        } else {
-            response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest,
+                                   HttpServletRequest request) {
+        if (loginRequest == null || loginRequest.getEmail() == null || loginRequest.getPassword() == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "email y password son obligatorios"));
         }
-        return theResponse;
+
+        boolean recaptchaValid = this.recaptchaVerificationService.verifyLoginToken(
+                loginRequest.getRecaptchaToken(),
+                request.getRemoteAddr()
+        );
+        if (!recaptchaValid) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Fallo la validacion de reCAPTCHA"));
+        }
+
+        User credentials = new User(loginRequest.getEmail(), loginRequest.getPassword());
+        String token = this.theSecurityService.login(credentials);
+        if (token == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        return ResponseEntity.ok(Map.of("token", token));
     }
 
     @PostMapping("oauth/login")

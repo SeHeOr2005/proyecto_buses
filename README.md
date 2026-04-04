@@ -50,13 +50,15 @@ MONGODB_DATABASE=db_security
 JWT_SECRET=clave_secreta_minimo_32_caracteres
 JWT_EXPIRATION=3600000
 NOTIFICATION_SERVICE_URL=http://localhost:5000
-FIREBASE_PROJECT_ID=flashbuslogin
-FIREBASE_CREDENTIALS_PATH=C:\\ruta\\a\\firebase-service-account.json
+FIREBASE_PROJECT_ID=flashbusangular
+FIREBASE_CREDENTIALS_PATH=confidential/flashbusangular-firebase-adminsdk-fbsvc-0fbf713fbe.json
 ```
 
 > Las variables de entorno se cargan automáticamente al ejecutar con el script de Maven.
 >
 > Para OAuth con Firebase (Google/correo-contraseña), descarga una credencial de **Service Account** desde Firebase Console y define `FIREBASE_CREDENTIALS_PATH` apuntando al JSON.
+>
+> En `ms-security`, la ruta actual del JSON es `confidential/flashbusangular-firebase-adminsdk-fbsvc-0fbf713fbe.json`.
 
 ### Ejecutar
 
