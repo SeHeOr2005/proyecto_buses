@@ -81,4 +81,20 @@ public class EmailNotificationService {
             System.err.println("Error al enviar correo de recuperación: " + e.getMessage());
         }
     }
+
+    @Async
+    public void sendTwoFactorCodeNotification(String userEmail, String userName,
+                                              String code, Long expiresInMinutes) {
+        try {
+            Map<String, Object> body = new HashMap<>();
+            body.put("to", userEmail);
+            body.put("name", userName);
+            body.put("code", code);
+            body.put("expiresInMinutes", expiresInMinutes);
+            restTemplate.postForObject(
+                    notificationServiceUrl + "/send-2fa-code", body, Map.class);
+        } catch (Exception e) {
+            System.err.println("Error al enviar codigo 2FA: " + e.getMessage());
+        }
+    }
 }

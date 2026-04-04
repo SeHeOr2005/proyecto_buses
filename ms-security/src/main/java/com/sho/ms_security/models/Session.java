@@ -16,6 +16,8 @@ public class Session {
     private String jti;
     private Date expiration;
     private String code2FA;
+    private Integer twoFactorAttemptsLeft;
+    private Date twoFactorVerifiedAt;
     private String provider;
     private String deviceInfo;
     private String ip;

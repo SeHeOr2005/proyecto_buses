@@ -291,5 +291,54 @@ def send_password_recovery():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/send-2fa-code', methods=['POST'])
+def send_two_factor_code():
+    """
+    Notificación de código 2FA por correo.
+    Body JSON:
+    {
+        "to": "usuario@correo.com",
+        "name": "Nombre del usuario",
+        "code": "123456",
+        "expiresInMinutes": 3
+    }
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos'}), 400
+
+    to = data.get('to')
+    name = data.get('name', 'Usuario')
+    code = data.get('code')
+    expires_in_minutes = data.get('expiresInMinutes', 3)
+
+    if not to:
+        return jsonify({'error': 'El campo "to" es requerido'}), 400
+    if not code:
+        return jsonify({'error': 'El campo "code" es requerido'}), 400
+
+    body = f"""
+    <html><body>
+    <p>Hola <strong>{name}</strong>,</p>
+    <p>Tu código de verificación para iniciar sesión en <strong>Flash Bus</strong> es:</p>
+    <h2 style=\"letter-spacing: 4px; font-size: 28px; color: #0d59cf;\">{code}</h2>
+    <p>Este código es válido por <strong>{expires_in_minutes} minutos</strong>.</p>
+    <p>Si no solicitaste este acceso, ignora este mensaje.</p>
+    <p>Saludos,<br><strong>Equipo Flash Bus</strong></p>
+    </body></html>
+    """
+
+    try:
+        creds = authenticate_gmail()
+        service = build('gmail', 'v1', credentials=creds)
+        message = build_message(DEFAULT_SENDER, to,
+                                'Código de verificación 2FA - Flash Bus',
+                                body, is_html=True)
+        result = send_gmail(service, message)
+        return jsonify({'success': True, 'id': result['id']}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

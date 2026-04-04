@@ -21,7 +21,9 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -49,24 +51,140 @@ public class SecurityService {
     @Autowired
     private SessionRepository theSessionRepository;
 
+    @Autowired
+    private EmailNotificationService emailNotificationService;
+
     @Value("${jwt.expiration}")
     private Long jwtExpiration;
 
     @Value("${oauth.allowed-providers:google.com,microsoft.com,github.com}")
     private String allowedOAuthProviders;
 
-    public String login(User theNewUser) {
+    @Value("${twofactor.enabled:true}")
+    private boolean twoFactorEnabled;
+
+    @Value("${twofactor.code-expiration-seconds:180}")
+    private Long twoFactorCodeExpirationSeconds;
+
+    @Value("${twofactor.max-attempts:3}")
+    private Integer twoFactorMaxAttempts;
+
+    public Map<String, Object> login(User theNewUser) {
         User theActualUser = this.theUserRepository.getUserByEmail(theNewUser.getEmail());
         if (theActualUser != null &&
                 !Boolean.FALSE.equals(theActualUser.getActive()) &&
                 StringUtils.hasText(theActualUser.getPassword()) &&
                 theActualUser.getPassword().equals(
                         theEncryptionService.convertSHA256(theNewUser.getPassword()))) {
+
+            if (twoFactorEnabled) {
+                Session pendingTwoFactorSession = createPendingTwoFactorSession(theActualUser, "password");
+                Map<String, Object> challenge = new HashMap<>();
+                challenge.put("requires2fa", true);
+                challenge.put("challengeToken", pendingTwoFactorSession.getToken());
+                challenge.put("maskedEmail", maskEmail(theActualUser.getEmail()));
+                challenge.put("expiresAt", pendingTwoFactorSession.getExpiration().getTime());
+                challenge.put("remainingAttempts", pendingTwoFactorSession.getTwoFactorAttemptsLeft());
+                return challenge;
+            }
+
             String token = theJwtService.generateToken(theActualUser);
             createSession(theActualUser, token, "password");
-            return token;
+            return Map.of("token", token);
         }
         return null;
+    }
+
+    public Map<String, Object> verifyTwoFactorCode(String challengeToken, String code) {
+        Session session = this.theSessionRepository.findPendingTwoFactorByToken(challengeToken);
+        if (session == null || session.getUser() == null || session.getRevokedAt() != null) {
+            return Map.of("status", "INVALID");
+        }
+
+        Date now = new Date();
+        if (session.getExpiration() == null || session.getExpiration().before(now)) {
+            session.setRevokedAt(now);
+            this.theSessionRepository.save(session);
+            return Map.of("status", "EXPIRED");
+        }
+
+        if (!StringUtils.hasText(code) || !code.equals(session.getCode2FA())) {
+            int attemptsLeft = session.getTwoFactorAttemptsLeft() != null
+                    ? Math.max(0, session.getTwoFactorAttemptsLeft() - 1)
+                    : 0;
+            session.setTwoFactorAttemptsLeft(attemptsLeft);
+
+            if (attemptsLeft == 0) {
+                session.setRevokedAt(now);
+                this.theSessionRepository.save(session);
+                return Map.of("status", "LOCKED", "attemptsLeft", 0);
+            }
+
+            this.theSessionRepository.save(session);
+            return Map.of("status", "INVALID_CODE", "attemptsLeft", attemptsLeft);
+        }
+
+        String token = this.theJwtService.generateToken(session.getUser());
+        session.setToken(token);
+        session.setJti(this.theJwtService.getTokenId(token));
+        session.setExpiration(new Date(System.currentTimeMillis() + jwtExpiration));
+        session.setCode2FA(null);
+        session.setTwoFactorAttemptsLeft(null);
+        session.setTwoFactorVerifiedAt(now);
+        this.theSessionRepository.save(session);
+
+        return Map.of("status", "OK", "token", token);
+    }
+
+    public Map<String, Object> resendTwoFactorCode(String challengeToken) {
+        Session session = this.theSessionRepository.findPendingTwoFactorByToken(challengeToken);
+        if (session == null || session.getUser() == null || session.getRevokedAt() != null) {
+            return Map.of("status", "INVALID");
+        }
+
+        Date now = new Date();
+        if (session.getExpiration() != null && session.getExpiration().after(now)) {
+            long secondsLeft = Math.max(0, (session.getExpiration().getTime() - now.getTime()) / 1000);
+            return Map.of("status", "WAIT", "secondsLeft", secondsLeft);
+        }
+
+        if (session.getTwoFactorAttemptsLeft() == null || session.getTwoFactorAttemptsLeft() <= 0) {
+            session.setRevokedAt(now);
+            this.theSessionRepository.save(session);
+            return Map.of("status", "LOCKED");
+        }
+
+        String newCode = generateSixDigitCode();
+        Date newExpiration = new Date(System.currentTimeMillis() + (twoFactorCodeExpirationSeconds * 1000));
+        session.setCode2FA(newCode);
+        session.setExpiration(newExpiration);
+        this.theSessionRepository.save(session);
+
+        emailNotificationService.sendTwoFactorCodeNotification(
+                session.getUser().getEmail(),
+                session.getUser().getName(),
+                newCode,
+                Math.max(1, twoFactorCodeExpirationSeconds / 60)
+        );
+
+        return Map.of(
+                "status", "RESENT",
+                "expiresAt", newExpiration.getTime(),
+                "remainingAttempts", session.getTwoFactorAttemptsLeft(),
+                "maskedEmail", maskEmail(session.getUser().getEmail())
+        );
+    }
+
+    public void cancelPendingTwoFactor(String challengeToken) {
+        if (!StringUtils.hasText(challengeToken)) {
+            return;
+        }
+        Session session = this.theSessionRepository.findPendingTwoFactorByToken(challengeToken);
+        if (session == null || session.getRevokedAt() != null) {
+            return;
+        }
+        session.setRevokedAt(new Date());
+        this.theSessionRepository.save(session);
     }
 
     public HashMap<String, Object> oauthLogin(String firebaseIdToken)
@@ -180,6 +298,55 @@ public class SecurityService {
         session.setProvider(provider);
         session.setUser(user);
         this.theSessionRepository.save(session);
+    }
+
+    private Session createPendingTwoFactorSession(User user, String provider) {
+        String challengeToken = "2fa_" + UUID.randomUUID();
+        String code = generateSixDigitCode();
+        Date expiration = new Date(System.currentTimeMillis() + (twoFactorCodeExpirationSeconds * 1000));
+
+        Session session = new Session();
+        session.setToken(challengeToken);
+        session.setCode2FA(code);
+        session.setTwoFactorAttemptsLeft(twoFactorMaxAttempts);
+        session.setExpiration(expiration);
+        session.setProvider(provider);
+        session.setUser(user);
+        this.theSessionRepository.save(session);
+
+        emailNotificationService.sendTwoFactorCodeNotification(
+                user.getEmail(),
+                user.getName(),
+                code,
+                Math.max(1, twoFactorCodeExpirationSeconds / 60)
+        );
+        return session;
+    }
+
+    private String generateSixDigitCode() {
+        int randomValue = new Random().nextInt(900000) + 100000;
+        return String.valueOf(randomValue);
+    }
+
+    private String maskEmail(String email) {
+        if (!StringUtils.hasText(email) || !email.contains("@")) {
+            return "***@***";
+        }
+        String[] parts = email.split("@", 2);
+        String localPart = parts[0];
+        String domainPart = parts[1];
+
+        if (!StringUtils.hasText(localPart)) {
+            localPart = "u";
+        }
+
+        String maskedLocal = localPart.length() <= 2
+                ? localPart.charAt(0) + "***"
+                : localPart.substring(0, 2) + "***";
+
+        int dotIndex = domainPart.lastIndexOf('.');
+        String suffix = dotIndex >= 0 ? domainPart.substring(dotIndex) : "";
+        return maskedLocal + "@***" + suffix;
     }
 
     private boolean isAllowedOAuthProvider(String provider) {
