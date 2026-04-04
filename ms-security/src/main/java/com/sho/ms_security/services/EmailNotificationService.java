@@ -65,4 +65,20 @@ public class EmailNotificationService {
             System.err.println("Error al enviar confirmación de cuenta: " + e.getMessage());
         }
     }
+
+    @Async
+    public void sendPasswordRecoveryNotification(String userEmail, String userName,
+                                                 String recoveryLink, Long expiresInMinutes) {
+        try {
+            Map<String, Object> body = new HashMap<>();
+            body.put("to", userEmail);
+            body.put("name", userName);
+            body.put("recoveryLink", recoveryLink);
+            body.put("expiresInMinutes", expiresInMinutes);
+            restTemplate.postForObject(
+                notificationServiceUrl + "/send-password-recovery", body, Map.class);
+        } catch (Exception e) {
+            System.err.println("Error al enviar correo de recuperación: " + e.getMessage());
+        }
+    }
 }

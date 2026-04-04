@@ -19,6 +19,8 @@ public class User {
     private Boolean emailVerified;
     private Boolean active = true;
     private Date lastLoginAt;
+    private String resetPasswordToken;
+    private Date resetPasswordTokenExpiration;
 
     public User() {}
 

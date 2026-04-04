@@ -2,7 +2,10 @@ package com.sho.ms_security.controllers;
 
 import com.sho.ms_security.models.LoginRequest;
 import com.sho.ms_security.models.OAuthLoginRequest;
+import com.sho.ms_security.models.PasswordRecoveryRequest;
+import com.sho.ms_security.models.ResetPasswordRequest;
 import com.sho.ms_security.models.User;
+import com.sho.ms_security.services.PasswordRecoveryService;
 import com.sho.ms_security.services.RecaptchaVerificationService;
 import com.sho.ms_security.services.SecurityService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,6 +32,9 @@ public class SecurityController {
 
     @Autowired
     private RecaptchaVerificationService recaptchaVerificationService;
+
+    @Autowired
+    private PasswordRecoveryService passwordRecoveryService;
 
     @PostMapping("login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest,
@@ -86,6 +92,56 @@ public class SecurityController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "No fue posible autenticar con OAuth", "detail", e.getMessage()));
         }
+    }
+
+    @PostMapping("password-recovery/request")
+    public ResponseEntity<?> requestPasswordRecovery(@RequestBody PasswordRecoveryRequest request,
+                                                     HttpServletRequest httpRequest) {
+        if (request == null || request.getEmail() == null || request.getEmail().isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "email es obligatorio"));
+        }
+
+        boolean recaptchaValid = this.recaptchaVerificationService.verifyToken(
+                request.getRecaptchaToken(),
+                "password_recovery_request",
+                httpRequest.getRemoteAddr()
+        );
+        if (!recaptchaValid) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Fallo la validacion de reCAPTCHA"));
+        }
+
+        this.passwordRecoveryService.requestPasswordRecovery(request.getEmail());
+        return ResponseEntity.ok(Map.of(
+                "message", "Si el correo está registrado, enviaremos un enlace para recuperar tu contraseña."
+        ));
+    }
+
+    @PostMapping("password-recovery/reset")
+    public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request,
+                                           HttpServletRequest httpRequest) {
+        if (request == null || request.getToken() == null || request.getToken().isBlank()
+                || request.getNewPassword() == null || request.getNewPassword().isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "token y newPassword son obligatorios"));
+        }
+
+        boolean recaptchaValid = this.recaptchaVerificationService.verifyToken(
+                request.getRecaptchaToken(),
+                "password_recovery_reset",
+                httpRequest.getRemoteAddr()
+        );
+        if (!recaptchaValid) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Map.of("error", "Fallo la validacion de reCAPTCHA"));
+        }
+
+        boolean resetOk = this.passwordRecoveryService.resetPassword(request.getToken(), request.getNewPassword());
+        if (!resetOk) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of("error", "No fue posible restablecer la contraseña"));
+        }
+
+        return ResponseEntity.ok(Map.of("message", "Contraseña actualizada correctamente."));
     }
 
     @GetMapping("me")

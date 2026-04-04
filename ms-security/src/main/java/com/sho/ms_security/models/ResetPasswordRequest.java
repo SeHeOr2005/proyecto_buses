@@ -1,0 +1,10 @@
+package com.sho.ms_security.models;
+
+import lombok.Data;
+
+@Data
+public class ResetPasswordRequest {
+    private String token;
+    private String newPassword;
+    private String recaptchaToken;
+}

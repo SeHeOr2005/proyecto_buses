@@ -240,5 +240,56 @@ def send_account_confirmation():
         return jsonify({'success': False, 'error': str(e)}), 500
 
 
+@app.route('/send-password-recovery', methods=['POST'])
+def send_password_recovery():
+    """
+    Notificación de recuperación de contraseña.
+    Body JSON:
+    {
+        "to": "usuario@correo.com",
+        "name": "Nombre del usuario",
+        "recoveryLink": "https://...",
+        "expiresInMinutes": 30
+    }
+    """
+    data = request.get_json()
+    if not data:
+        return jsonify({'error': 'No se recibieron datos'}), 400
+
+    to = data.get('to')
+    name = data.get('name', 'Usuario')
+    recovery_link = data.get('recoveryLink', '')
+    expires_in_minutes = data.get('expiresInMinutes', 30)
+
+    if not to:
+        return jsonify({'error': 'El campo "to" es requerido'}), 400
+    if not recovery_link:
+        return jsonify({'error': 'El campo "recoveryLink" es requerido'}), 400
+
+    body = f"""
+    <html><body>
+    <p>Hola <strong>{name}</strong>,</p>
+    <p>Recibimos una solicitud para restablecer tu contraseña en <strong>Flash Bus</strong>.</p>
+    <p>Haz clic en el siguiente enlace para continuar:</p>
+    <p><a href=\"{recovery_link}\">Restablecer contraseña</a></p>
+    <p>Este enlace estará disponible por <strong>{expires_in_minutes} minutos</strong>.</p>
+    <br>
+    <p>Si no solicitaste este cambio, puedes ignorar este mensaje.</p>
+    <p>Saludos,<br><strong>Equipo Flash Bus</strong></p>
+    </body></html>
+    """
+
+    try:
+        creds = authenticate_gmail()
+        service = build('gmail', 'v1', credentials=creds)
+        message = build_message(DEFAULT_SENDER, to,
+                                'Recuperación de contraseña - Flash Bus',
+                                body, is_html=True)
+        result = send_gmail(service, message)
+        return jsonify({'success': True, 'id': result['id']}), 200
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)
