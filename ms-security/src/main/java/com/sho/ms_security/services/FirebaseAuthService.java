@@ -6,6 +6,7 @@ import com.google.firebase.FirebaseOptions;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
+import com.google.firebase.auth.UserRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,6 +47,39 @@ public class FirebaseAuthService {
             }
         }
         return "unknown";
+    }
+
+    public void deleteUserByUid(String uid) {
+        if (!StringUtils.hasText(uid)) {
+            return;
+        }
+
+        try {
+            ensureInitialized();
+            firebaseAuth.deleteUser(uid.trim());
+        } catch (FirebaseAuthException ex) {
+            LOGGER.warn("No se pudo eliminar usuario Firebase por uid {}: {}", uid, ex.getMessage());
+        } catch (Exception ex) {
+            LOGGER.warn("No se pudo inicializar Firebase para eliminar uid {}: {}", uid, ex.getMessage());
+        }
+    }
+
+    public void deleteUserByEmail(String email) {
+        if (!StringUtils.hasText(email)) {
+            return;
+        }
+
+        try {
+            ensureInitialized();
+            UserRecord userRecord = firebaseAuth.getUserByEmail(email.trim());
+            if (userRecord != null && StringUtils.hasText(userRecord.getUid())) {
+                firebaseAuth.deleteUser(userRecord.getUid());
+            }
+        } catch (FirebaseAuthException ex) {
+            LOGGER.warn("No se pudo eliminar usuario Firebase por email {}: {}", email, ex.getMessage());
+        } catch (Exception ex) {
+            LOGGER.warn("No se pudo inicializar Firebase para eliminar email {}: {}", email, ex.getMessage());
+        }
     }
 
     private void ensureInitialized() throws IOException {
