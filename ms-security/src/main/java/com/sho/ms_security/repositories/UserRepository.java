@@ -14,6 +14,9 @@ public interface UserRepository extends MongoRepository<User, String> {
     @Query("{'firebaseUid': ?0}")
     User getUserByFirebaseUid(String firebaseUid);
 
+    @Query("{'previousFirebaseUid': ?0}")
+    User getUserByPreviousFirebaseUid(String previousFirebaseUid);
+
     @Query("{'resetPasswordToken': ?0}")
     User getUserByResetPasswordToken(String resetPasswordToken);
 

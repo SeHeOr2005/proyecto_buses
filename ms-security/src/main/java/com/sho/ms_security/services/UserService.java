@@ -49,12 +49,14 @@ public class UserService {
     }
 
     public User create(User newUser) {
-        if (newUser == null || !StringUtils.hasText(newUser.getEmail()) || !StringUtils.hasText(newUser.getPassword())) {
+        if (newUser == null || !StringUtils.hasText(newUser.getEmail())
+                || !StringUtils.hasText(newUser.getPassword())) {
             throw new IllegalArgumentException("El correo y la contraseña son obligatorios");
         }
 
         if (!isPasswordValid(newUser.getPassword())) {
-            throw new IllegalArgumentException("La contraseña debe tener minimo 8 caracteres, una mayuscula, un numero y un caracter especial");
+            throw new IllegalArgumentException(
+                    "La contraseña debe tener minimo 8 caracteres, una mayuscula, un numero y un caracter especial");
         }
 
         // Validar que el email no esté ya registrado
@@ -76,9 +78,46 @@ public class UserService {
     public User update(String id, User newUser) {
         User actualUser = this.theUserRepository.findById(id).orElse(null);
         if (actualUser != null) {
-            actualUser.setName(newUser.getName());
-            actualUser.setEmail(newUser.getEmail());
-            actualUser.setPassword(this.theEncryption.convertSHA256(newUser.getPassword()));
+            if (StringUtils.hasText(newUser.getName())) {
+                actualUser.setName(newUser.getName());
+            }
+
+            if (StringUtils.hasText(newUser.getEmail())) {
+                User emailOwner = this.theUserRepository.getUserByEmail(newUser.getEmail().trim());
+                if (emailOwner != null && !id.equals(emailOwner.getId())) {
+                    throw new IllegalArgumentException("El correo ya está registrado");
+                }
+                actualUser.setEmail(newUser.getEmail().trim());
+            }
+
+            boolean unlinkSocialAccount = Boolean.TRUE.equals(newUser.getUnlinkSocialAccount());
+            String incomingPassword = StringUtils.hasText(newUser.getPassword()) ? newUser.getPassword() : null;
+
+            if (unlinkSocialAccount) {
+                if (!StringUtils.hasText(incomingPassword)) {
+                    throw new IllegalArgumentException(
+                            "Debes definir una contraseña para desvincular la cuenta social");
+                }
+                if (!isPasswordValid(incomingPassword)) {
+                    throw new IllegalArgumentException(
+                            "La contraseña debe tener minimo 8 caracteres, una mayuscula, un numero y un caracter especial");
+                }
+
+                actualUser.setPassword(this.theEncryption.convertSHA256(incomingPassword));
+                if (StringUtils.hasText(actualUser.getFirebaseUid())) {
+                    actualUser.setPreviousFirebaseUid(actualUser.getFirebaseUid());
+                }
+                actualUser.setFirebaseUid(null);
+                actualUser.setAuthProvider(null);
+                actualUser.setEmailVerified(false);
+            } else if (StringUtils.hasText(incomingPassword)) {
+                if (!isPasswordValid(incomingPassword)) {
+                    throw new IllegalArgumentException(
+                            "La contraseña debe tener minimo 8 caracteres, una mayuscula, un numero y un caracter especial");
+                }
+                actualUser.setPassword(this.theEncryption.convertSHA256(incomingPassword));
+            }
+
             this.theUserRepository.save(actualUser);
             return actualUser;
         }
@@ -100,12 +139,13 @@ public class UserService {
      */
     public int assignCiudadanoToAll() {
         Role ciudadano = this.theRoleRepository.findByName("CIUDADANO");
-        if (ciudadano == null) return 0;
+        if (ciudadano == null)
+            return 0;
         List<User> users = this.theUserRepository.findAll();
         int count = 0;
         for (User user : users) {
-            List<com.sho.ms_security.models.UserRole> existing =
-                    this.theUserRoleRepository.getRolesByUser(user.getId());
+            List<com.sho.ms_security.models.UserRole> existing = this.theUserRoleRepository
+                    .getRolesByUser(user.getId());
             boolean alreadyHasRole = existing.stream()
                     .anyMatch(ur -> ur.getRole() != null && ciudadano.getId().equals(ur.getRole().getId()));
             if (!alreadyHasRole) {

@@ -15,6 +15,9 @@ import org.springframework.util.StringUtils;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 
 @Service
@@ -58,7 +61,7 @@ public class FirebaseAuthService {
 
             // Intentar diferentes fuentes de credenciales
             String credentialsPath = findCredentialsPath();
-            
+
             if (StringUtils.hasText(credentialsPath)) {
                 try (InputStream credentialsStream = new FileInputStream(credentialsPath)) {
                     LOGGER.info("Cargando credenciales de Firebase desde archivo: {}", credentialsPath);
@@ -76,9 +79,8 @@ public class FirebaseAuthService {
                             "Configure GOOGLE_APPLICATION_CREDENTIALS o firebase.credentials.path", e);
                     throw new IllegalStateException(
                             "No se encontro credencial de Firebase. Configure GOOGLE_APPLICATION_CREDENTIALS " +
-                            "o defina firebase.credentials.path en application.properties",
-                            e
-                    );
+                                    "o defina firebase.credentials.path en application.properties",
+                            e);
                 }
             }
 
@@ -99,22 +101,34 @@ public class FirebaseAuthService {
      * 3. null (cargará Application Default Credentials)
      */
     private String findCredentialsPath() {
-        // Primero intenta variable de entorno GOOGLE_APPLICATION_CREDENTIALS
-        String googleAppCreds = System.getenv("GOOGLE_APPLICATION_CREDENTIALS");
-        if (StringUtils.hasText(googleAppCreds)) {
-            LOGGER.debug("Encontrada variable de entorno GOOGLE_APPLICATION_CREDENTIALS: {}", googleAppCreds);
-            return googleAppCreds;
+        String[] candidates = new String[] {
+                System.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
+                System.getenv("FIREBASE_CREDENTIALS_PATH"),
+                credentialsPath,
+                "confidential/credentials.json",
+                "../ms-notificaciones/confidential/credentials.json",
+                "ms-notificaciones/confidential/credentials.json"
+        };
+
+        for (String candidate : candidates) {
+            if (!StringUtils.hasText(candidate) || candidate.contains("ruta")) {
+                continue;
+            }
+
+            Path path = Paths.get(candidate);
+            if (!path.isAbsolute()) {
+                path = Paths.get(System.getProperty("user.dir", ".")).resolve(candidate).normalize();
+            }
+
+            if (Files.isRegularFile(path)) {
+                LOGGER.info("Usando credenciales de Firebase desde: {}", path);
+                return path.toString();
+            }
+
+            LOGGER.debug("Ruta de credenciales no encontrada: {}", path);
         }
 
-        // Luego intenta firebase.credentials.path de properties
-        if (StringUtils.hasText(credentialsPath) && !credentialsPath.contains("ruta")) {
-            LOGGER.debug("Encontrada propiedad firebase.credentials.path: {}", credentialsPath);
-            return credentialsPath;
-        }
-
-        LOGGER.debug("No se encontró ruta de credenciales explícita, usará Application Default Credentials");
+        LOGGER.debug("No se encontró ruta de credenciales válida, usará Application Default Credentials");
         return null;
     }
 }
-
-

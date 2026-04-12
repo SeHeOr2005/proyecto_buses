@@ -3,10 +3,12 @@ package com.sho.ms_security.services;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.auth.FirebaseToken;
 import com.sho.ms_security.models.Role;
+import com.sho.ms_security.models.RolePermission;
 import com.sho.ms_security.models.Session;
 import com.sho.ms_security.models.User;
 import com.sho.ms_security.models.UserRole;
 import com.sho.ms_security.repositories.RoleRepository;
+import com.sho.ms_security.repositories.RolePermissionRepository;
 import com.sho.ms_security.repositories.SessionRepository;
 import com.sho.ms_security.repositories.UserRepository;
 import com.sho.ms_security.repositories.UserRoleRepository;
@@ -24,6 +26,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.LinkedHashSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -47,6 +50,9 @@ public class SecurityService {
 
     @Autowired
     private UserRoleRepository theUserRoleRepository;
+
+    @Autowired
+    private RolePermissionRepository theRolePermissionRepository;
 
     @Autowired
     private SessionRepository theSessionRepository;
@@ -164,15 +170,13 @@ public class SecurityService {
                 session.getUser().getEmail(),
                 session.getUser().getName(),
                 newCode,
-                Math.max(1, twoFactorCodeExpirationSeconds / 60)
-        );
+                Math.max(1, twoFactorCodeExpirationSeconds / 60));
 
         return Map.of(
                 "status", "RESENT",
                 "expiresAt", newExpiration.getTime(),
                 "remainingAttempts", session.getTwoFactorAttemptsLeft(),
-                "maskedEmail", maskEmail(session.getUser().getEmail())
-        );
+                "maskedEmail", maskEmail(session.getUser().getEmail()));
     }
 
     public void cancelPendingTwoFactor(String challengeToken) {
@@ -229,6 +233,7 @@ public class SecurityService {
         HashMap<String, Object> payload = new HashMap<>();
         payload.put("user", sanitizeUser(currentUser));
         payload.put("roles", getRolesByUserId(currentUser.getId()));
+        payload.put("permissions", getPermissionsByUserId(currentUser.getId()));
         return payload;
     }
 
@@ -251,6 +256,9 @@ public class SecurityService {
 
         User user = this.theUserRepository.getUserByFirebaseUid(firebaseUid);
         if (user == null) {
+            user = this.theUserRepository.getUserByPreviousFirebaseUid(firebaseUid);
+        }
+        if (user == null) {
             user = this.theUserRepository.getUserByEmail(email);
         }
 
@@ -266,6 +274,7 @@ public class SecurityService {
         }
 
         user.setFirebaseUid(firebaseUid);
+        user.setPreviousFirebaseUid(null);
         user.setAuthProvider(provider);
         user.setEmailVerified(Boolean.TRUE.equals(firebaseToken.getClaims().get("email_verified")));
         user.setLastLoginAt(new Date());
@@ -318,8 +327,7 @@ public class SecurityService {
                 user.getEmail(),
                 user.getName(),
                 code,
-                Math.max(1, twoFactorCodeExpirationSeconds / 60)
-        );
+                Math.max(1, twoFactorCodeExpirationSeconds / 60));
         return session;
     }
 
@@ -371,6 +379,43 @@ public class SecurityService {
             }
         }
         return roleNames;
+    }
+
+    private List<Map<String, String>> getPermissionsByUserId(String userId) {
+        List<UserRole> userRoles = this.theUserRoleRepository.getRolesByUser(userId);
+        LinkedHashSet<String> uniqueKeys = new LinkedHashSet<>();
+        List<Map<String, String>> permissions = new ArrayList<>();
+
+        for (UserRole userRole : userRoles) {
+            if (userRole.getRole() == null || !StringUtils.hasText(userRole.getRole().getId())) {
+                continue;
+            }
+
+            List<RolePermission> rolePermissions = this.theRolePermissionRepository
+                    .getPermissionsByRole(userRole.getRole().getId());
+
+            for (RolePermission rolePermission : rolePermissions) {
+                if (rolePermission.getPermission() == null) {
+                    continue;
+                }
+
+                String url = rolePermission.getPermission().getUrl();
+                String method = rolePermission.getPermission().getMethod();
+                if (!StringUtils.hasText(url) || !StringUtils.hasText(method)) {
+                    continue;
+                }
+
+                String key = method.trim().toUpperCase() + "|" + url.trim();
+                if (uniqueKeys.add(key)) {
+                    Map<String, String> permissionPayload = new HashMap<>();
+                    permissionPayload.put("url", url.trim());
+                    permissionPayload.put("method", method.trim().toUpperCase());
+                    permissions.add(permissionPayload);
+                }
+            }
+        }
+
+        return permissions;
     }
 
     private Map<String, Object> sanitizeUser(User user) {
