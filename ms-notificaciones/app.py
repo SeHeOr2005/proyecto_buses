@@ -1,10 +1,12 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import base64
+from html import escape
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
 import pickle
+from textwrap import dedent
 from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
@@ -16,6 +18,7 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 CREDENTIALS_PATH = 'confidential/credentials.json'
 TOKEN_PATH = 'confidential/token.pickle'
 DEFAULT_SENDER = 'sebastian.herrera45451@ucaldas.edu.co'
+LOGO_PATHS = ['flash-bus-logo-cropped.png', 'flash-bus-logo.png']
 
 
 # ─── Gmail Auth ────────────────────────────────────────────────────────────────
@@ -54,6 +57,333 @@ def build_message(sender, to, subject, body, is_html=False):
 
 def send_gmail(service, message):
     return service.users().messages().send(userId='me', body=message).execute()
+
+
+def get_logo_data_uri():
+    for logo_path in LOGO_PATHS:
+        if os.path.exists(logo_path):
+            with open(logo_path, 'rb') as logo_file:
+                encoded_logo = base64.b64encode(logo_file.read()).decode('ascii')
+            return f'data:image/png;base64,{encoded_logo}'
+    return ''
+
+
+def build_email_template(
+        title,
+        headline,
+        intro,
+        body_html,
+        footer_note,
+        accent_color='#0d59cf',
+        badge_text='Flash Bus',
+        action_text=None,
+        action_url=None,
+    logo_src='',
+):
+        safe_action_text = escape(action_text) if action_text else ''
+        safe_action_url = escape(action_url, quote=True) if action_url else ''
+        action_block = ''
+        if safe_action_text and safe_action_url:
+                action_block = f'<a class="button" href="{safe_action_url}">{safe_action_text}</a>'
+
+        return dedent(f'''
+        <!DOCTYPE html>
+        <html lang="es">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>{escape(title)}</title>
+                <style>
+                    body {{
+                        margin: 0;
+                        padding: 0;
+                        background: #f4f7fb;
+                        font-family: Arial, Helvetica, sans-serif;
+                        color: #1f2937;
+                    }}
+                    .wrapper {{
+                        width: 100%;
+                        background: linear-gradient(180deg, #eaf1ff 0%, #f4f7fb 38%, #f4f7fb 100%);
+                        padding: 32px 16px;
+                    }}
+                    .container {{
+                        max-width: 640px;
+                        margin: 0 auto;
+                    }}
+                    .card {{
+                        background: #ffffff;
+                        border-radius: 22px;
+                        overflow: hidden;
+                        box-shadow: 0 18px 48px rgba(15, 23, 42, 0.12);
+                        border: 1px solid rgba(13, 89, 207, 0.08);
+                    }}
+                    .header {{
+                        padding: 28px 32px 18px;
+                        background: linear-gradient(135deg, {accent_color} 0%, #0b3f99 100%);
+                        color: #ffffff;
+                    }}
+                    .badge {{
+                        display: inline-block;
+                        padding: 6px 12px;
+                        border-radius: 999px;
+                        background: rgba(255, 255, 255, 0.18);
+                        font-size: 12px;
+                        font-weight: 700;
+                        letter-spacing: 0.08em;
+                        text-transform: uppercase;
+                        margin-bottom: 16px;
+                    }}
+                    .brand {{
+                        display: flex;
+                        align-items: center;
+                        gap: 14px;
+                    }}
+                    .brand-mark {{
+                        width: 48px;
+                        height: 48px;
+                        border-radius: 14px;
+                        background: rgba(255, 255, 255, 0.18);
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 18px;
+                        font-weight: 800;
+                        letter-spacing: 0.04em;
+                    }}
+                    .brand-logo {{
+                        display: block;
+                        max-width: 220px;
+                        max-height: 72px;
+                        width: auto;
+                        height: auto;
+                        object-fit: contain;
+                    }}
+                    .brand-text h1 {{
+                        margin: 0;
+                        font-size: 20px;
+                        line-height: 1.2;
+                    }}
+                    .brand-text p {{
+                        margin: 4px 0 0;
+                        font-size: 14px;
+                        opacity: 0.9;
+                    }}
+                    .content {{
+                        padding: 32px;
+                    }}
+                    .eyebrow {{
+                        margin: 0 0 8px;
+                        color: {accent_color};
+                        font-size: 13px;
+                        font-weight: 700;
+                        letter-spacing: 0.06em;
+                        text-transform: uppercase;
+                    }}
+                    .headline {{
+                        margin: 0 0 14px;
+                        font-size: 28px;
+                        line-height: 1.2;
+                        color: #0f172a;
+                    }}
+                    .intro, .paragraph {{
+                        margin: 0 0 16px;
+                        font-size: 16px;
+                        line-height: 1.7;
+                        color: #334155;
+                    }}
+                    .panel {{
+                        margin: 24px 0;
+                        padding: 20px;
+                        border-radius: 18px;
+                        background: #f8fbff;
+                        border: 1px solid rgba(13, 89, 207, 0.12);
+                    }}
+                    .button {{
+                        display: inline-block;
+                        margin-top: 8px;
+                        padding: 14px 22px;
+                        border-radius: 14px;
+                        background: {accent_color};
+                        color: #ffffff !important;
+                        text-decoration: none;
+                        font-weight: 700;
+                        font-size: 15px;
+                    }}
+                    .code-box {{
+                        display: inline-block;
+                        padding: 16px 22px;
+                        border-radius: 16px;
+                        background: linear-gradient(135deg, rgba(13, 89, 207, 0.10), rgba(13, 89, 207, 0.18));
+                        border: 1px solid rgba(13, 89, 207, 0.18);
+                        font-size: 32px;
+                        line-height: 1;
+                        letter-spacing: 0.18em;
+                        font-weight: 800;
+                        color: #0b3f99;
+                    }}
+                    .meta {{
+                        margin-top: 12px;
+                        font-size: 14px;
+                        color: #64748b;
+                    }}
+                    .fine-print {{
+                        margin: 18px 0 0;
+                        font-size: 13px;
+                        line-height: 1.6;
+                        color: #64748b;
+                    }}
+                    .footer {{
+                        padding: 0 32px 28px;
+                        color: #64748b;
+                        font-size: 13px;
+                        line-height: 1.6;
+                    }}
+                    .divider {{
+                        margin: 0 32px 20px;
+                        height: 1px;
+                        background: linear-gradient(90deg, rgba(13, 89, 207, 0), rgba(13, 89, 207, 0.18), rgba(13, 89, 207, 0));
+                    }}
+                    @media only screen and (max-width: 600px) {{
+                        .wrapper {{ padding: 16px 10px; }}
+                        .header, .content, .footer, .divider {{ padding-left: 20px; padding-right: 20px; }}
+                        .headline {{ font-size: 24px; }}
+                        .code-box {{ font-size: 26px; letter-spacing: 0.12em; }}
+                        .brand-text h1 {{ font-size: 18px; }}
+                    }}
+                </style>
+            </head>
+            <body>
+                <div class="wrapper">
+                    <div class="container">
+                        <div class="card">
+                            <div class="header">
+                                <div class="brand">
+                                    {f'<img class="brand-logo" src="{escape(logo_src, quote=True)}" alt="Flash Bus">' if logo_src else '<div class="brand-mark">FB</div>'}
+                                </div>
+                            </div>
+                            <div class="content">
+                                <p class="eyebrow">{escape(badge_text)}</p>
+                                <h2 class="headline">{escape(headline)}</h2>
+                                <p class="intro">{intro}</p>
+                                {body_html}
+                                {action_block}
+                            </div>
+                            <div class="divider"></div>
+                            <div class="footer">
+                                {footer_note}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </body>
+        </html>
+        ''').strip()
+
+
+def render_role_change_email(name, role_name, action):
+        safe_name = escape(name)
+        safe_role_name = escape(role_name)
+        safe_action = escape(action)
+        body_html = f'''
+        <div class="panel">
+            <p class="paragraph"><strong>Usuario:</strong> {safe_name}</p>
+            <p class="paragraph"><strong>Acción:</strong> {safe_action} del rol <em>{safe_role_name}</em></p>
+            <p class="paragraph" style="margin-bottom: 0;">Este cambio aplica inmediatamente en la plataforma.</p>
+        </div>
+        <p class="paragraph">Si tienes alguna duda, contacta al administrador del sistema.</p>
+        '''
+        return build_email_template(
+                title='Flash Bus',
+                headline='Tus roles fueron actualizados',
+                intro=f'Estimado/a <strong>{safe_name}</strong>, hemos actualizado tus permisos dentro de la plataforma.',
+                body_html=body_html,
+                footer_note='Saludos,<br><strong>Equipo de Administración</strong>',
+                accent_color='#0d59cf',
+                logo_src=get_logo_data_uri(),
+        )
+
+
+def render_permission_change_email(name, role_name):
+        safe_name = escape(name)
+        safe_role_name = escape(role_name)
+        body_html = f'''
+        <div class="panel">
+            <p class="paragraph" style="margin-bottom: 0;">Los permisos del rol <strong>{safe_role_name}</strong> se han ajustado para reflejar el nuevo acceso asignado.</p>
+        </div>
+        <p class="paragraph">Estos cambios aplican inmediatamente en tu cuenta.</p>
+        <p class="paragraph">Si tienes alguna duda, contacta al administrador del sistema.</p>
+        '''
+        return build_email_template(
+                title='Flash Bus',
+                headline='Actualización de permisos',
+                intro=f'Hola <strong>{safe_name}</strong>, te informamos que tu acceso fue actualizado.',
+                body_html=body_html,
+                footer_note='Saludos,<br><strong>Equipo de Administración</strong>',
+                accent_color='#0d59cf',
+                logo_src=get_logo_data_uri(),
+        )
+
+
+def render_account_confirmation_email(name):
+        safe_name = escape(name)
+        body_html = '''
+        <div class="panel">
+            <p class="paragraph" style="margin-bottom: 0;">Ya puedes ingresar a la plataforma con tu correo y contraseña.</p>
+        </div>
+        <p class="paragraph">Si no reconoces este registro, contacta al equipo de soporte.</p>
+        '''
+        return build_email_template(
+                title='Flash Bus',
+                headline='Tu cuenta fue creada con éxito',
+                intro=f'Hola <strong>{safe_name}</strong>, tu cuenta en <strong>Flash Bus</strong> está lista para usar.',
+                body_html=body_html,
+                footer_note='Saludos,<br><strong>Equipo Flash Bus</strong>',
+                accent_color='#0f766e',
+                logo_src=get_logo_data_uri(),
+        )
+
+
+def render_password_recovery_email(name, recovery_link, expires_in_minutes):
+        safe_name = escape(name)
+        body_html = f'''
+        <div class="panel">
+            <p class="paragraph" style="margin-bottom: 14px;">Haz clic en el botón para continuar con el restablecimiento de contraseña.</p>
+            <p class="paragraph" style="margin-bottom: 0;">Este enlace solo debe usarse desde un dispositivo de confianza.</p>
+        </div>
+        <p class="meta">Este enlace estará disponible por <strong>{expires_in_minutes} minutos</strong>.</p>
+        '''
+        return build_email_template(
+                title='Flash Bus',
+                headline='Restablece tu contraseña',
+                intro=f'Hola <strong>{safe_name}</strong>, recibimos una solicitud para recuperar el acceso a tu cuenta.',
+                body_html=body_html,
+                footer_note='Si no solicitaste este cambio, puedes ignorar este mensaje.<br><br>Saludos,<br><strong>Equipo Flash Bus</strong>',
+                accent_color='#c2410c',
+                action_text='Restablecer contraseña',
+                action_url=recovery_link,
+                logo_src=get_logo_data_uri(),
+        )
+
+
+def render_two_factor_email(name, code, expires_in_minutes):
+        safe_name = escape(name)
+        safe_code = escape(code)
+        body_html = f'''
+        <div class="panel" style="text-align: center;">
+            <div class="code-box">{safe_code}</div>
+            <p class="meta">Código válido por <strong>{expires_in_minutes} minutos</strong></p>
+        </div>
+        <p class="paragraph">Si no solicitaste este acceso, ignora este mensaje.</p>
+        '''
+        return build_email_template(
+                title='Flash Bus',
+                headline='Código de verificación para iniciar sesión',
+                intro=f'Hola <strong>{safe_name}</strong>, usa el siguiente código para completar tu inicio de sesión.',
+                body_html=body_html,
+                footer_note='Mantén este código en privado.<br><br>Saludos,<br><strong>Equipo Flash Bus</strong>',
+                accent_color='#1d4ed8',
+                logo_src=get_logo_data_uri(),
+        )
 
 
 # ─── Endpoints ─────────────────────────────────────────────────────────────────
@@ -128,17 +458,7 @@ def send_role_change():
     if not to:
         return jsonify({'error': 'El campo "to" es requerido'}), 400
 
-    body = f"""
-    <html><body>
-    <p>Estimado/a <strong>{name}</strong>,</p>
-    <p>Sus roles han sido actualizados en el sistema.</p>
-    <p><strong>Acción:</strong> {action} del rol <em>"{role_name}"</em>.</p>
-    <p>Este cambio aplica <strong>inmediatamente</strong> en la plataforma.</p>
-    <br>
-    <p>Si tiene alguna duda, contacte al administrador del sistema.</p>
-    <p>Saludos,<br><strong>Equipo de Administración</strong></p>
-    </body></html>
-    """
+    body = render_role_change_email(name, role_name, action)
 
     try:
         creds   = authenticate_gmail()
@@ -174,16 +494,7 @@ def send_permission_change():
     if not to:
         return jsonify({'error': 'El campo "to" es requerido'}), 400
 
-    body = f"""
-    <html><body>
-    <p>Estimado/a <strong>{name}</strong>,</p>
-    <p>Los permisos del rol <em>"{role_name}"</em> han sido actualizados.</p>
-    <p>Este cambio aplica <strong>inmediatamente</strong> en su acceso a la plataforma.</p>
-    <br>
-    <p>Si tiene alguna duda, contacte al administrador del sistema.</p>
-    <p>Saludos,<br><strong>Equipo de Administración</strong></p>
-    </body></html>
-    """
+    body = render_permission_change_email(name, role_name)
 
     try:
         creds   = authenticate_gmail()
@@ -217,16 +528,7 @@ def send_account_confirmation():
     if not to:
         return jsonify({'error': 'El campo "to" es requerido'}), 400
 
-    body = f"""
-    <html><body>
-    <p>Hola <strong>{name}</strong>,</p>
-    <p>Tu cuenta en <strong>Flash Bus</strong> fue creada exitosamente.</p>
-    <p>Ya puedes ingresar a la plataforma con tu correo y contraseña.</p>
-    <br>
-    <p>Si no reconoces este registro, contacta al equipo de soporte.</p>
-    <p>Saludos,<br><strong>Equipo Flash Bus</strong></p>
-    </body></html>
-    """
+    body = render_account_confirmation_email(name)
 
     try:
         creds = authenticate_gmail()
@@ -266,18 +568,7 @@ def send_password_recovery():
     if not recovery_link:
         return jsonify({'error': 'El campo "recoveryLink" es requerido'}), 400
 
-    body = f"""
-    <html><body>
-    <p>Hola <strong>{name}</strong>,</p>
-    <p>Recibimos una solicitud para restablecer tu contraseña en <strong>Flash Bus</strong>.</p>
-    <p>Haz clic en el siguiente enlace para continuar:</p>
-    <p><a href=\"{recovery_link}\">Restablecer contraseña</a></p>
-    <p>Este enlace estará disponible por <strong>{expires_in_minutes} minutos</strong>.</p>
-    <br>
-    <p>Si no solicitaste este cambio, puedes ignorar este mensaje.</p>
-    <p>Saludos,<br><strong>Equipo Flash Bus</strong></p>
-    </body></html>
-    """
+    body = render_password_recovery_email(name, recovery_link, expires_in_minutes)
 
     try:
         creds = authenticate_gmail()
@@ -317,16 +608,7 @@ def send_two_factor_code():
     if not code:
         return jsonify({'error': 'El campo "code" es requerido'}), 400
 
-    body = f"""
-    <html><body>
-    <p>Hola <strong>{name}</strong>,</p>
-    <p>Tu código de verificación para iniciar sesión en <strong>Flash Bus</strong> es:</p>
-    <h2 style=\"letter-spacing: 4px; font-size: 28px; color: #0d59cf;\">{code}</h2>
-    <p>Este código es válido por <strong>{expires_in_minutes} minutos</strong>.</p>
-    <p>Si no solicitaste este acceso, ignora este mensaje.</p>
-    <p>Saludos,<br><strong>Equipo Flash Bus</strong></p>
-    </body></html>
-    """
+    body = render_two_factor_email(name, code, expires_in_minutes)
 
     try:
         creds = authenticate_gmail()
