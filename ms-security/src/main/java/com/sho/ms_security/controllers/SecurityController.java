@@ -40,15 +40,14 @@ public class SecurityController {
 
     @PostMapping("login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest,
-                                   HttpServletRequest request) {
+            HttpServletRequest request) {
         if (loginRequest == null || loginRequest.getEmail() == null || loginRequest.getPassword() == null) {
             return ResponseEntity.badRequest().body(Map.of("error", "email y password son obligatorios"));
         }
 
         boolean recaptchaValid = this.recaptchaVerificationService.verifyLoginToken(
                 loginRequest.getRecaptchaToken(),
-                request.getRemoteAddr()
-        );
+                request.getRemoteAddr());
         if (!recaptchaValid) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "Fallo la validacion de reCAPTCHA"));
@@ -73,8 +72,7 @@ public class SecurityController {
         }
 
         Map<String, Object> result = this.theSecurityService.verifyTwoFactorCode(
-                request.getChallengeToken(), request.getCode()
-        );
+                request.getChallengeToken(), request.getCode());
 
         String status = (String) result.get("status");
         if ("OK".equals(status)) {
@@ -110,8 +108,7 @@ public class SecurityController {
                     "message", "Codigo reenviado",
                     "expiresAt", result.get("expiresAt"),
                     "remainingAttempts", result.get("remainingAttempts"),
-                    "maskedEmail", result.get("maskedEmail")
-            ));
+                    "maskedEmail", result.get("maskedEmail")));
         }
         if ("WAIT".equals(status)) {
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
@@ -147,7 +144,9 @@ public class SecurityController {
         }
 
         try {
-            HashMap<String, Object> response = this.theSecurityService.oauthLogin(request.getFirebaseIdToken());
+            HashMap<String, Object> response = this.theSecurityService.oauthLogin(
+                    request.getFirebaseIdToken(),
+                    request.getAvatarUrl());
             if (response == null) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Token OAuth invalido"));
@@ -175,7 +174,7 @@ public class SecurityController {
 
     @PostMapping("password-recovery/request")
     public ResponseEntity<?> requestPasswordRecovery(@RequestBody PasswordRecoveryRequest request,
-                                                     HttpServletRequest httpRequest) {
+            HttpServletRequest httpRequest) {
         if (request == null || request.getEmail() == null || request.getEmail().isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "email es obligatorio"));
         }
@@ -183,8 +182,7 @@ public class SecurityController {
         boolean recaptchaValid = this.recaptchaVerificationService.verifyToken(
                 request.getRecaptchaToken(),
                 "password_recovery_request",
-                httpRequest.getRemoteAddr()
-        );
+                httpRequest.getRemoteAddr());
         if (!recaptchaValid) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "Fallo la validacion de reCAPTCHA"));
@@ -192,13 +190,12 @@ public class SecurityController {
 
         this.passwordRecoveryService.requestPasswordRecovery(request.getEmail());
         return ResponseEntity.ok(Map.of(
-                "message", "Si el correo está registrado, enviaremos un enlace para recuperar tu contraseña."
-        ));
+                "message", "Si el correo está registrado, enviaremos un enlace para recuperar tu contraseña."));
     }
 
     @PostMapping("password-recovery/reset")
     public ResponseEntity<?> resetPassword(@RequestBody ResetPasswordRequest request,
-                                           HttpServletRequest httpRequest) {
+            HttpServletRequest httpRequest) {
         if (request == null || request.getToken() == null || request.getToken().isBlank()
                 || request.getNewPassword() == null || request.getNewPassword().isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "token y newPassword son obligatorios"));
@@ -207,8 +204,7 @@ public class SecurityController {
         boolean recaptchaValid = this.recaptchaVerificationService.verifyToken(
                 request.getRecaptchaToken(),
                 "password_recovery_reset",
-                httpRequest.getRemoteAddr()
-        );
+                httpRequest.getRemoteAddr());
         if (!recaptchaValid) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(Map.of("error", "Fallo la validacion de reCAPTCHA"));

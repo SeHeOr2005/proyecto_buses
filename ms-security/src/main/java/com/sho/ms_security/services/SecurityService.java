@@ -18,6 +18,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ByteArrayOutputStream;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -191,7 +195,7 @@ public class SecurityService {
         this.theSessionRepository.save(session);
     }
 
-    public HashMap<String, Object> oauthLogin(String firebaseIdToken)
+    public HashMap<String, Object> oauthLogin(String firebaseIdToken, String avatarHint)
             throws FirebaseAuthException, IOException {
         FirebaseToken firebaseToken = this.firebaseAuthService.verifyIdToken(firebaseIdToken);
         String provider = this.firebaseAuthService.getProvider(firebaseToken);
@@ -199,7 +203,7 @@ public class SecurityService {
             throw new IllegalArgumentException("Proveedor OAuth no permitido: " + provider);
         }
 
-        User user = upsertOAuthUser(firebaseToken, provider);
+        User user = upsertOAuthUser(firebaseToken, provider, avatarHint);
         if (user == null) {
             return null;
         }
@@ -247,12 +251,14 @@ public class SecurityService {
         return true;
     }
 
-    private User upsertOAuthUser(FirebaseToken firebaseToken, String provider) {
+    private User upsertOAuthUser(FirebaseToken firebaseToken, String provider, String avatarHint) {
         String firebaseUid = firebaseToken.getUid();
         String email = firebaseToken.getEmail();
         if (!StringUtils.hasText(firebaseUid) || !StringUtils.hasText(email)) {
             return null;
         }
+
+        String avatar = extractProfilePhotoUrl(firebaseToken, avatarHint);
 
         User user = this.theUserRepository.getUserByFirebaseUid(firebaseUid);
         if (user == null) {
@@ -276,6 +282,9 @@ public class SecurityService {
         user.setFirebaseUid(firebaseUid);
         user.setPreviousFirebaseUid(null);
         user.setAuthProvider(provider);
+        if (StringUtils.hasText(avatar)) {
+            user.setAvatar(avatar);
+        }
         user.setEmailVerified(Boolean.TRUE.equals(firebaseToken.getClaims().get("email_verified")));
         user.setLastLoginAt(new Date());
 
@@ -423,11 +432,62 @@ public class SecurityService {
         userPayload.put("id", user.getId());
         userPayload.put("name", user.getName());
         userPayload.put("email", user.getEmail());
+        userPayload.put("avatar", user.getAvatar());
         userPayload.put("firebaseUid", user.getFirebaseUid());
         userPayload.put("authProvider", user.getAuthProvider());
         userPayload.put("emailVerified", user.getEmailVerified());
         userPayload.put("active", user.getActive());
         userPayload.put("lastLoginAt", user.getLastLoginAt());
         return userPayload;
+    }
+
+    private String extractProfilePhotoUrl(FirebaseToken firebaseToken, String avatarHint) {
+        String candidateUrl = StringUtils.hasText(avatarHint)
+                ? avatarHint.trim()
+                : null;
+
+        if (!StringUtils.hasText(candidateUrl)) {
+            Object picture = firebaseToken.getClaims().get("picture");
+            if (picture instanceof String pictureUrl && StringUtils.hasText(pictureUrl)) {
+                candidateUrl = pictureUrl.trim();
+            }
+        }
+
+        if (!StringUtils.hasText(candidateUrl)) {
+            return null;
+        }
+
+        if (candidateUrl.startsWith("data:image/")) {
+            return candidateUrl;
+        }
+
+        return downloadAvatarAsDataUrl(candidateUrl);
+    }
+
+    private String downloadAvatarAsDataUrl(String avatarUrl) {
+        try {
+            URLConnection connection = new URL(avatarUrl).openConnection();
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
+
+            String contentType = connection.getContentType();
+            if (!StringUtils.hasText(contentType) || !contentType.startsWith("image/")) {
+                contentType = "image/jpeg";
+            }
+
+            try (InputStream inputStream = connection.getInputStream();
+                    ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
+
+                String base64 = java.util.Base64.getEncoder().encodeToString(outputStream.toByteArray());
+                return "data:" + contentType + ";base64," + base64;
+            }
+        } catch (Exception ex) {
+            return StringUtils.hasText(avatarUrl) ? avatarUrl.trim() : null;
+        }
     }
 }

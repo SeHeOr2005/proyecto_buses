@@ -40,6 +40,9 @@ public class UserService {
     @Autowired
     private EmailNotificationService emailNotificationService;
 
+    @Autowired
+    private FirebaseAuthService firebaseAuthService;
+
     public List<User> find() {
         return this.theUserRepository.findAll();
     }
@@ -103,6 +106,9 @@ public class UserService {
                             "La contraseña debe tener minimo 8 caracteres, una mayuscula, un numero y un caracter especial");
                 }
 
+                String firebaseUidToDelete = actualUser.getFirebaseUid();
+                String emailToDelete = actualUser.getEmail();
+
                 actualUser.setPassword(this.theEncryption.convertSHA256(incomingPassword));
                 if (StringUtils.hasText(actualUser.getFirebaseUid())) {
                     actualUser.setPreviousFirebaseUid(actualUser.getFirebaseUid());
@@ -110,6 +116,8 @@ public class UserService {
                 actualUser.setFirebaseUid(null);
                 actualUser.setAuthProvider(null);
                 actualUser.setEmailVerified(false);
+
+                removeFirebaseIdentity(firebaseUidToDelete, emailToDelete);
             } else if (StringUtils.hasText(incomingPassword)) {
                 if (!isPasswordValid(incomingPassword)) {
                     throw new IllegalArgumentException(
@@ -127,10 +135,22 @@ public class UserService {
     public boolean delete(String id) {
         User theUser = this.theUserRepository.findById(id).orElse(null);
         if (theUser != null) {
+            removeFirebaseIdentity(theUser.getFirebaseUid(), theUser.getEmail());
             this.theUserRepository.delete(theUser);
             return true;
         }
         return false;
+    }
+
+    private void removeFirebaseIdentity(String firebaseUid, String email) {
+        if (StringUtils.hasText(firebaseUid)) {
+            this.firebaseAuthService.deleteUserByUid(firebaseUid);
+            return;
+        }
+
+        if (StringUtils.hasText(email)) {
+            this.firebaseAuthService.deleteUserByEmail(email);
+        }
     }
 
     /**
