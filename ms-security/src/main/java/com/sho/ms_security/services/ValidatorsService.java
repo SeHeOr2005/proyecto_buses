@@ -40,27 +40,40 @@ public class ValidatorsService {
      * inmediatamente porque esta validación consulta la BD en cada request.
      */
     public boolean validationRolePermission(HttpServletRequest request,
-                                            String url,
-                                            String method) {
+            String url,
+            String method) {
         // Verificar que el usuario existe en la BD (invalida acceso si fue eliminado)
         String userId = getVerifiedUserId(request);
-        if (userId == null) return false;
+        if (userId == null)
+            return false;
+
+        // Permitir operaciones sobre el propio perfil aunque el rol no tenga
+        // permisos administrativos globales de "usuarios".
+        if (isSelfUserUpdate(url, method, userId)
+                || isSelfUserRoleRead(url, method, userId)
+                || isOwnRolePermissionRead(url, method, userId)) {
+            return true;
+        }
 
         // Normalizar URLs reemplazando IDs de MongoDB y números con "?"
         url = url.replaceAll("[0-9a-fA-F]{24}|\\d+", "?");
         Permission thePermission = this.thePermissionRepository.getPermission(url, method);
-        if (thePermission == null) return false;
+        if (thePermission == null)
+            return false;
 
-        // Consulta dirigida: solo los roles de este usuario, sin cargar toda la colección
+        // Consulta dirigida: solo los roles de este usuario, sin cargar toda la
+        // colección
         List<UserRole> roles = this.theUserRoleRepository.getRolesByUser(userId);
 
         for (UserRole ur : roles) {
             Role theRole = ur.getRole();
             if (theRole != null) {
-                // Consulta dirigida: busca exactamente el par (rol, permiso), sin cargar toda la colección
+                // Consulta dirigida: busca exactamente el par (rol, permiso), sin cargar toda
+                // la colección
                 RolePermission rp = this.theRolePermissionRepository
                         .getRolePermission(theRole.getId(), thePermission.getId());
-                if (rp != null) return true;
+                if (rp != null)
+                    return true;
             }
         }
         return false;
@@ -105,5 +118,51 @@ public class ValidatorsService {
             }
         }
         return null;
+    }
+
+    private boolean isSelfUserUpdate(String url, String method, String userId) {
+        if (!"PUT".equalsIgnoreCase(method)) {
+            return false;
+        }
+        String prefix = "/api/users/";
+        if (!url.startsWith(prefix)) {
+            return false;
+        }
+        String requestedUserId = url.substring(prefix.length());
+        return !requestedUserId.isBlank() && requestedUserId.equals(userId);
+    }
+
+    private boolean isSelfUserRoleRead(String url, String method, String userId) {
+        if (!"GET".equalsIgnoreCase(method)) {
+            return false;
+        }
+        String prefix = "/user-role/user/";
+        if (!url.startsWith(prefix)) {
+            return false;
+        }
+        String requestedUserId = url.substring(prefix.length());
+        return !requestedUserId.isBlank() && requestedUserId.equals(userId);
+    }
+
+    private boolean isOwnRolePermissionRead(String url, String method, String userId) {
+        if (!"GET".equalsIgnoreCase(method)) {
+            return false;
+        }
+
+        String prefix = "/role-permission/role/";
+        if (!url.startsWith(prefix)) {
+            return false;
+        }
+
+        String requestedRoleId = url.substring(prefix.length());
+        if (requestedRoleId.isBlank()) {
+            return false;
+        }
+
+        List<UserRole> roles = this.theUserRoleRepository.getRolesByUser(userId);
+        return roles.stream()
+                .map(UserRole::getRole)
+                .filter(role -> role != null && role.getId() != null)
+                .anyMatch(role -> requestedRoleId.equals(role.getId()));
     }
 }

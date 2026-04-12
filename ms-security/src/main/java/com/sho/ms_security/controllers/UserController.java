@@ -69,8 +69,18 @@ public class UserController {
     }
 
     @PutMapping("{id}")
-    public User update(@PathVariable String id, @RequestBody User newUser) {
-        return this.theUserService.update(id, newUser);
+    public ResponseEntity<?> update(@PathVariable String id, @RequestBody User newUser) {
+        try {
+            User updated = this.theUserService.update(id, newUser);
+            if (updated == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "Usuario no encontrado"));
+            }
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException ex) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of("error", ex.getMessage()));
+        }
     }
 
     @DeleteMapping("{id}")
