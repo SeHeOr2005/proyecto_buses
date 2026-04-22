@@ -1,5 +1,7 @@
 package com.sho.ms_security.services;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
@@ -26,6 +28,7 @@ import java.util.Map;
 @Service
 public class FirebaseAuthService {
     private static final Logger LOGGER = LoggerFactory.getLogger(FirebaseAuthService.class);
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Value("${firebase.project-id:}")
     private String projectId;
@@ -98,7 +101,9 @@ public class FirebaseAuthService {
 
             if (StringUtils.hasText(firebaseConfigJson)) {
                 LOGGER.info("Cargando credenciales de Firebase desde variable de entorno FIREBASE_CONFIG_JSON");
-                try (InputStream targetStream = new ByteArrayInputStream(firebaseConfigJson.getBytes(StandardCharsets.UTF_8))) {
+                String normalizedJson = normalizeFirebaseConfigJson(firebaseConfigJson);
+                try (InputStream targetStream = new ByteArrayInputStream(
+                        normalizedJson.getBytes(StandardCharsets.UTF_8))) {
                     optionsBuilder.setCredentials(GoogleCredentials.fromStream(targetStream));
                 }
             }
@@ -116,8 +121,10 @@ public class FirebaseAuthService {
                         LOGGER.info("Intentando usar Application Default Credentials para Firebase");
                         optionsBuilder.setCredentials(GoogleCredentials.getApplicationDefault());
                     } catch (IOException e) {
-                        LOGGER.error("No se encontraron credenciales de Firebase. Configure FIREBASE_CONFIG_JSON en Railway.");
-                        throw new IllegalStateException("Error de configuración: No se encontró el JSON de credenciales de Firebase.", e);
+                        LOGGER.error(
+                                "No se encontraron credenciales de Firebase. Configure FIREBASE_CONFIG_JSON en Railway.");
+                        throw new IllegalStateException(
+                                "Error de configuración: No se encontró el JSON de credenciales de Firebase.", e);
                     }
                 }
             }
@@ -130,6 +137,23 @@ public class FirebaseAuthService {
         }
 
         firebaseAuth = FirebaseAuth.getInstance(app);
+    }
+
+    private String normalizeFirebaseConfigJson(String rawConfig) throws IOException {
+        JsonNode root = OBJECT_MAPPER.readTree(rawConfig.trim());
+
+        // Railway puede guardar el JSON como string serializado (con comillas
+        // externas).
+        if (root != null && root.isTextual()) {
+            root = OBJECT_MAPPER.readTree(root.asText());
+        }
+
+        if (root == null || !root.isObject()) {
+            throw new IllegalArgumentException(
+                    "FIREBASE_CONFIG_JSON debe ser un objeto JSON con credenciales de service account");
+        }
+
+        return OBJECT_MAPPER.writeValueAsString(root);
     }
 
     private String findCredentialsPath() {
