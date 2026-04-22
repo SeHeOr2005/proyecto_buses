@@ -8,10 +8,6 @@ import os
 import pickle
 import json
 from textwrap import dedent
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
 
 app = Flask(__name__)
 CORS(app)
@@ -42,10 +38,20 @@ def load_token_from_env():
     if not GOOGLE_TOKEN_PICKLE_BASE64:
         return None
     token_bytes = base64.b64decode(GOOGLE_TOKEN_PICKLE_BASE64)
-    creds = pickle.loads(token_bytes)
-    if isinstance(creds, Credentials):
-        return creds
-    raise ValueError('GOOGLE_TOKEN_PICKLE_BASE64 no contiene un token válido de Google OAuth.')
+    return pickle.loads(token_bytes)
+
+
+def build_gmail_service(credentials):
+    from googleapiclient.discovery import build
+
+    return build('gmail', 'v1', credentials=credentials)
+
+
+def refresh_google_credentials(credentials):
+    from google.auth.transport.requests import Request
+
+    credentials.refresh(Request())
+    return credentials
 
 def authenticate_gmail():
     creds = load_token_from_env()
@@ -56,13 +62,15 @@ def authenticate_gmail():
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
+            creds = refresh_google_credentials(creds)
         else:
             if not ALLOW_INTERACTIVE_OAUTH:
                 raise RuntimeError(
                     'No hay token OAuth válido y ALLOW_INTERACTIVE_OAUTH está en false. '
                     'Define GOOGLE_TOKEN_PICKLE_BASE64 (recomendado) o habilita OAuth interactivo temporalmente.'
                 )
+
+            from google_auth_oauthlib.flow import InstalledAppFlow
 
             client_config = load_client_config_from_env()
             if client_config:
@@ -468,7 +476,7 @@ def send_email():
 
     try:
         creds   = authenticate_gmail()
-        service = build('gmail', 'v1', credentials=creds)
+        service = build_gmail_service(creds)
         message = build_message(DEFAULT_SENDER, to, subject, body, is_html)
         result  = send_gmail(service, message)
         return jsonify({
@@ -508,7 +516,7 @@ def send_role_change():
 
     try:
         creds   = authenticate_gmail()
-        service = build('gmail', 'v1', credentials=creds)
+        service = build_gmail_service(creds)
         message = build_message(DEFAULT_SENDER, to,
                                 'Cambio en sus roles y permisos - Flash Bus',
                                 body, is_html=True)
@@ -544,7 +552,7 @@ def send_permission_change():
 
     try:
         creds   = authenticate_gmail()
-        service = build('gmail', 'v1', credentials=creds)
+        service = build_gmail_service(creds)
         message = build_message(DEFAULT_SENDER, to,
                                 'Actualización de permisos - Flash Bus',
                                 body, is_html=True)
@@ -578,7 +586,7 @@ def send_account_confirmation():
 
     try:
         creds = authenticate_gmail()
-        service = build('gmail', 'v1', credentials=creds)
+        service = build_gmail_service(creds)
         message = build_message(DEFAULT_SENDER, to,
                                 'Confirmación de cuenta - Flash Bus',
                                 body, is_html=True)
@@ -618,7 +626,7 @@ def send_password_recovery():
 
     try:
         creds = authenticate_gmail()
-        service = build('gmail', 'v1', credentials=creds)
+        service = build_gmail_service(creds)
         message = build_message(DEFAULT_SENDER, to,
                                 'Recuperación de contraseña - Flash Bus',
                                 body, is_html=True)
@@ -658,7 +666,7 @@ def send_two_factor_code():
 
     try:
         creds = authenticate_gmail()
-        service = build('gmail', 'v1', credentials=creds)
+        service = build_gmail_service(creds)
         message = build_message(DEFAULT_SENDER, to,
                                 'Código de verificación 2FA - Flash Bus',
                                 body, is_html=True)
