@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
 import base64
 from html import escape
 from email.mime.text import MIMEText
@@ -10,7 +9,6 @@ import json
 from textwrap import dedent
 
 app = Flask(__name__)
-CORS(app)
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.send']
 CREDENTIALS_PATH = os.getenv('GOOGLE_CREDENTIALS_PATH', 'confidential/credentials.json')
@@ -445,6 +443,11 @@ def render_two_factor_email(name, code, expires_in_minutes):
 @app.route('/health', methods=['GET'])
 def health():
     return jsonify({'status': 'ok', 'service': 'ms-notificaciones'}), 200
+
+
+@app.route('/', methods=['GET'])
+def index():
+    return jsonify({'status': 'ok', 'service': 'ms-notificaciones', 'message': 'running'}), 200
 
 
 @app.route('/send-email', methods=['POST'])
