@@ -13,9 +13,11 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.io.ByteArrayInputStream;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -53,7 +55,6 @@ public class FirebaseAuthService {
         if (!StringUtils.hasText(uid)) {
             return;
         }
-
         try {
             ensureInitialized();
             firebaseAuth.deleteUser(uid.trim());
@@ -68,7 +69,6 @@ public class FirebaseAuthService {
         if (!StringUtils.hasText(email)) {
             return;
         }
-
         try {
             ensureInitialized();
             UserRecord userRecord = firebaseAuth.getUserByEmail(email.trim());
@@ -93,28 +93,32 @@ public class FirebaseAuthService {
         } else {
             FirebaseOptions.Builder optionsBuilder = FirebaseOptions.builder();
 
-            // Intentar diferentes fuentes de credenciales
-            String credentialsPath = findCredentialsPath();
+            // 1. Prioridad: Intentar leer el JSON directamente desde la variable de entorno
+            String firebaseConfigJson = System.getenv("FIREBASE_CONFIG_JSON");
 
-            if (StringUtils.hasText(credentialsPath)) {
-                try (InputStream credentialsStream = new FileInputStream(credentialsPath)) {
-                    LOGGER.info("Cargando credenciales de Firebase desde archivo: {}", credentialsPath);
-                    optionsBuilder.setCredentials(GoogleCredentials.fromStream(credentialsStream));
-                } catch (IOException e) {
-                    LOGGER.error("Error al cargar credenciales desde archivo: {}", credentialsPath, e);
-                    throw e;
+            if (StringUtils.hasText(firebaseConfigJson)) {
+                LOGGER.info("Cargando credenciales de Firebase desde variable de entorno FIREBASE_CONFIG_JSON");
+                try (InputStream targetStream = new ByteArrayInputStream(firebaseConfigJson.getBytes(StandardCharsets.UTF_8))) {
+                    optionsBuilder.setCredentials(GoogleCredentials.fromStream(targetStream));
                 }
-            } else {
-                try {
-                    LOGGER.info("Intentando usar Application Default Credentials para Firebase");
-                    optionsBuilder.setCredentials(GoogleCredentials.getApplicationDefault());
-                } catch (IOException e) {
-                    LOGGER.error("No se encontraron credenciales de Firebase. " +
-                            "Configure GOOGLE_APPLICATION_CREDENTIALS o firebase.credentials.path", e);
-                    throw new IllegalStateException(
-                            "No se encontro credencial de Firebase. Configure GOOGLE_APPLICATION_CREDENTIALS " +
-                                    "o defina firebase.credentials.path en application.properties",
-                            e);
+            }
+            // 2. Segunda opción: Buscar el archivo físico (útil para desarrollo local)
+            else {
+                String pathStr = findCredentialsPath();
+                if (StringUtils.hasText(pathStr)) {
+                    try (InputStream credentialsStream = new FileInputStream(pathStr)) {
+                        LOGGER.info("Cargando credenciales de Firebase desde archivo: {}", pathStr);
+                        optionsBuilder.setCredentials(GoogleCredentials.fromStream(credentialsStream));
+                    }
+                } else {
+                    // 3. Fallback: Intentar credenciales por defecto del sistema
+                    try {
+                        LOGGER.info("Intentando usar Application Default Credentials para Firebase");
+                        optionsBuilder.setCredentials(GoogleCredentials.getApplicationDefault());
+                    } catch (IOException e) {
+                        LOGGER.error("No se encontraron credenciales de Firebase. Configure FIREBASE_CONFIG_JSON en Railway.");
+                        throw new IllegalStateException("Error de configuración: No se encontró el JSON de credenciales de Firebase.", e);
+                    }
                 }
             }
 
@@ -128,20 +132,12 @@ public class FirebaseAuthService {
         firebaseAuth = FirebaseAuth.getInstance(app);
     }
 
-    /**
-     * Busca la ruta de credenciales en este orden:
-     * 1. Variable de entorno GOOGLE_APPLICATION_CREDENTIALS (estándar Google Cloud)
-     * 2. Propiedad firebase.credentials.path si está configurada
-     * 3. null (cargará Application Default Credentials)
-     */
     private String findCredentialsPath() {
         String[] candidates = new String[] {
                 System.getenv("GOOGLE_APPLICATION_CREDENTIALS"),
                 System.getenv("FIREBASE_CREDENTIALS_PATH"),
                 credentialsPath,
-                "confidential/credentials.json",
-                "../ms-notificaciones/confidential/credentials.json",
-                "ms-notificaciones/confidential/credentials.json"
+                "confidential/credentials.json"
         };
 
         for (String candidate : candidates) {
@@ -155,14 +151,9 @@ public class FirebaseAuthService {
             }
 
             if (Files.isRegularFile(path)) {
-                LOGGER.info("Usando credenciales de Firebase desde: {}", path);
                 return path.toString();
             }
-
-            LOGGER.debug("Ruta de credenciales no encontrada: {}", path);
         }
-
-        LOGGER.debug("No se encontró ruta de credenciales válida, usará Application Default Credentials");
         return null;
     }
 }
