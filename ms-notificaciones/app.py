@@ -6,8 +6,10 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import os
 import pickle
+import json
 from textwrap import dedent
 from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
@@ -15,25 +17,69 @@ app = Flask(__name__)
 CORS(app)
 
 SCOPES = ['https://www.googleapis.com/auth/gmail.send']
-CREDENTIALS_PATH = 'confidential/credentials.json'
-TOKEN_PATH = 'confidential/token.pickle'
-DEFAULT_SENDER = 'sebastian.herrera45451@ucaldas.edu.co'
+CREDENTIALS_PATH = os.getenv('GOOGLE_CREDENTIALS_PATH', 'confidential/credentials.json')
+TOKEN_PATH = os.getenv('GOOGLE_TOKEN_PATH', 'confidential/token.pickle')
+DEFAULT_SENDER = os.getenv('GMAIL_SENDER', 'sebastian.herrera45451@ucaldas.edu.co')
+GOOGLE_CREDENTIALS_JSON = os.getenv('GOOGLE_CREDENTIALS_JSON', '')
+GOOGLE_CREDENTIALS_JSON_BASE64 = os.getenv('GOOGLE_CREDENTIALS_JSON_BASE64', '')
+GOOGLE_TOKEN_PICKLE_BASE64 = os.getenv('GOOGLE_TOKEN_PICKLE_BASE64', '')
+ALLOW_INTERACTIVE_OAUTH = os.getenv('ALLOW_INTERACTIVE_OAUTH', 'false').lower() in ('1', 'true', 'yes', 'on')
 LOGO_PATHS = ['flash-bus-logo-cropped.png', 'flash-bus-logo.png']
 
 
 # ─── Gmail Auth ────────────────────────────────────────────────────────────────
 
+def load_client_config_from_env():
+    if GOOGLE_CREDENTIALS_JSON:
+        return json.loads(GOOGLE_CREDENTIALS_JSON)
+    if GOOGLE_CREDENTIALS_JSON_BASE64:
+        decoded = base64.b64decode(GOOGLE_CREDENTIALS_JSON_BASE64).decode('utf-8')
+        return json.loads(decoded)
+    return None
+
+
+def load_token_from_env():
+    if not GOOGLE_TOKEN_PICKLE_BASE64:
+        return None
+    token_bytes = base64.b64decode(GOOGLE_TOKEN_PICKLE_BASE64)
+    creds = pickle.loads(token_bytes)
+    if isinstance(creds, Credentials):
+        return creds
+    raise ValueError('GOOGLE_TOKEN_PICKLE_BASE64 no contiene un token válido de Google OAuth.')
+
 def authenticate_gmail():
-    creds = None
-    if os.path.exists(TOKEN_PATH):
+    creds = load_token_from_env()
+
+    if not creds and os.path.exists(TOKEN_PATH):
         with open(TOKEN_PATH, 'rb') as token:
             creds = pickle.load(token)
+
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
+            if not ALLOW_INTERACTIVE_OAUTH:
+                raise RuntimeError(
+                    'No hay token OAuth válido y ALLOW_INTERACTIVE_OAUTH está en false. '
+                    'Define GOOGLE_TOKEN_PICKLE_BASE64 (recomendado) o habilita OAuth interactivo temporalmente.'
+                )
+
+            client_config = load_client_config_from_env()
+            if client_config:
+                flow = InstalledAppFlow.from_client_config(client_config, SCOPES)
+            elif os.path.exists(CREDENTIALS_PATH):
+                flow = InstalledAppFlow.from_client_secrets_file(CREDENTIALS_PATH, SCOPES)
+            else:
+                raise RuntimeError(
+                    'No se encontraron credenciales OAuth de Google. '
+                    'Define GOOGLE_CREDENTIALS_JSON o GOOGLE_CREDENTIALS_JSON_BASE64.'
+                )
+
             creds = flow.run_local_server(port=0)
+
+        token_dir = os.path.dirname(TOKEN_PATH)
+        if token_dir:
+            os.makedirs(token_dir, exist_ok=True)
         with open(TOKEN_PATH, 'wb') as token:
             pickle.dump(creds, token)
     return creds
@@ -623,4 +669,6 @@ def send_two_factor_code():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    port = int(os.getenv('PORT', '5000'))
+    debug = os.getenv('FLASK_DEBUG', 'false').lower() in ('1', 'true', 'yes', 'on')
+    app.run(debug=debug, host='0.0.0.0', port=port)
