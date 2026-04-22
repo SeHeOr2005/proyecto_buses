@@ -16,8 +16,7 @@ import java.util.Map;
 @Slf4j
 public class RecaptchaVerificationService {
 
-    private static final String ENTERPRISE_API_TEMPLATE =
-            "https://recaptchaenterprise.googleapis.com/v1/projects/%s/assessments?key=%s";
+    private static final String ENTERPRISE_API_TEMPLATE = "https://recaptchaenterprise.googleapis.com/v1/projects/%s/assessments?key=%s";
 
     @Value("${recaptcha.enabled:true}")
     private boolean recaptchaEnabled;
@@ -78,16 +77,21 @@ public class RecaptchaVerificationService {
             EnterpriseAssessmentResponse response = restTemplate.postForObject(
                     url,
                     request,
-                    EnterpriseAssessmentResponse.class
-            );
+                    EnterpriseAssessmentResponse.class);
 
             if (response == null || response.getTokenProperties() == null) {
                 return false;
             }
 
             if (!Boolean.TRUE.equals(response.getTokenProperties().getValid())) {
-                log.warn("reCAPTCHA Enterprise token inválido. invalidReason={}",
-                        response.getTokenProperties().getInvalidReason());
+                int tokenLength = token != null ? token.length() : 0;
+                log.warn(
+                        "reCAPTCHA Enterprise token inválido. invalidReason={}, action={}, hostname={}, createTime={}, tokenLength={}",
+                        response.getTokenProperties().getInvalidReason(),
+                        response.getTokenProperties().getAction(),
+                        response.getTokenProperties().getHostname(),
+                        response.getTokenProperties().getCreateTime(),
+                        tokenLength);
                 return false;
             }
 
@@ -98,7 +102,16 @@ public class RecaptchaVerificationService {
             }
 
             Double score = response.getRiskAnalysis() != null ? response.getRiskAnalysis().getScore() : null;
-            return score != null && score >= minScore;
+            if (score == null || score < minScore) {
+                String reasons = response.getRiskAnalysis() != null && response.getRiskAnalysis().getReasons() != null
+                        ? String.join(",", response.getRiskAnalysis().getReasons())
+                        : "none";
+                log.warn("reCAPTCHA Enterprise score insuficiente. score={}, minScore={}, reasons={}", score, minScore,
+                        reasons);
+                return false;
+            }
+
+            return true;
         } catch (Exception ex) {
             log.error("Error verificando reCAPTCHA Enterprise", ex);
             return false;
@@ -128,6 +141,8 @@ public class RecaptchaVerificationService {
     public static class TokenProperties {
         private Boolean valid;
         private String action;
+        private String createTime;
+        private String hostname;
         private String invalidReason;
     }
 
