@@ -121,10 +121,13 @@ public class FirebaseAuthService {
                         LOGGER.info("Intentando usar Application Default Credentials para Firebase");
                         optionsBuilder.setCredentials(GoogleCredentials.getApplicationDefault());
                     } catch (IOException e) {
-                        LOGGER.error(
-                                "No se encontraron credenciales de Firebase. Configure FIREBASE_CONFIG_JSON en Railway.");
+                        String hint = "Descarga la cuenta de servicio desde Firebase Console (Project settings > Service accounts) "
+                                + "y colócala en ms-security/confidential/ con el nombre configurado en firebase.credentials.path, "
+                                + "o define la variable de entorno GOOGLE_APPLICATION_CREDENTIALS con la ruta absoluta al .json, "
+                                + "o FIREBASE_CONFIG_JSON con el JSON completo (p. ej. en Railway).";
+                        LOGGER.error("No se encontraron credenciales de Firebase. {}", hint);
                         throw new IllegalStateException(
-                                "Error de configuración: No se encontró el JSON de credenciales de Firebase.", e);
+                                "No se encontró el JSON de credenciales de Firebase Admin SDK. " + hint, e);
                     }
                 }
             }
@@ -169,15 +172,37 @@ public class FirebaseAuthService {
                 continue;
             }
 
-            Path path = Paths.get(candidate);
-            if (!path.isAbsolute()) {
-                path = Paths.get(System.getProperty("user.dir", ".")).resolve(candidate).normalize();
+            Path candidatePath = Paths.get(candidate);
+            if (candidatePath.isAbsolute()) {
+                if (Files.isRegularFile(candidatePath)) {
+                    return candidatePath.toString();
+                }
+                continue;
             }
 
-            if (Files.isRegularFile(path)) {
-                return path.toString();
+            for (Path base : firebaseCredentialSearchBases()) {
+                Path resolved = base.resolve(candidate).normalize();
+                if (Files.isRegularFile(resolved)) {
+                    LOGGER.debug("Credenciales Firebase encontradas en: {}", resolved);
+                    return resolved.toString();
+                }
             }
         }
         return null;
+    }
+
+    /**
+     * Resuelve rutas relativas tanto si el proceso arranca con {@code user.dir}
+     * en la raíz del monorepo ({@code .../proyecto_buses}) como si arranca dentro
+     * de {@code ms-security} (IntelliJ / Maven con working directory del módulo).
+     */
+    private Path[] firebaseCredentialSearchBases() {
+        Path cwd = Paths.get(System.getProperty("user.dir", ".")).normalize();
+        String leaf = cwd.getFileName() != null ? cwd.getFileName().toString() : "";
+        if ("ms-security".equalsIgnoreCase(leaf)) {
+            return new Path[] { cwd };
+        }
+        Path nested = cwd.resolve("ms-security").normalize();
+        return new Path[] { cwd, nested };
     }
 }

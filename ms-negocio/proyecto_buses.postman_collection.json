@@ -1,0 +1,113 @@
+{
+    "info": {
+        "_postman_id": "c13d8d67-4f6c-4b53-8b43-9b4f4206e231",
+        "name": "Proyecto Buses - ms-negocio",
+        "description": "Colección de pruebas para el backend ms-negocio",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Health Check",
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "http://localhost:3200/health",
+                    "protocol": "http",
+                    "host": [
+                        "localhost"
+                    ],
+                    "port": "3200",
+                    "path": [
+                        "health"
+                    ]
+                }
+            },
+            "response": []
+        },
+        {
+            "name": "1. Módulo Rutas",
+            "item": [
+                {
+                    "name": "Obtener Rutas",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:3200/api/rutas",
+                            "protocol": "http",
+                            "host": ["localhost"],
+                            "port": "3200",
+                            "path": ["api", "rutas"]
+                        }
+                    }
+                },
+                {
+                    "name": "Paraderos Cercanos",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:3200/api/paraderos/cercanos?lat=4.6097&lng=-74.0817",
+                            "protocol": "http",
+                            "host": ["localhost"],
+                            "port": "3200",
+                            "path": ["api", "paraderos", "cercanos"],
+                            "query": [
+                                { "key": "lat", "value": "4.6097" },
+                                { "key": "lng", "value": "-74.0817" }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "2. Módulo Analytics",
+            "item": [
+                {
+                    "name": "Ingresos por Método de Pago",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:3200/api/analytics/ingresos-metodo-pago",
+                            "protocol": "http",
+                            "host": ["localhost"],
+                            "port": "3200",
+                            "path": ["api", "analytics", "ingresos-metodo-pago"]
+                        }
+                    }
+                },
+                {
+                    "name": "Pasajeros por Edades",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:3200/api/analytics/pasajeros-edades",
+                            "protocol": "http",
+                            "host": ["localhost"],
+                            "port": "3200",
+                            "path": ["api", "analytics", "pasajeros-edades"]
+                        }
+                    }
+                },
+                {
+                    "name": "Tendencia Incidentes",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "http://localhost:3200/api/analytics/incidentes-tendencia",
+                            "protocol": "http",
+                            "host": ["localhost"],
+                            "port": "3200",
+                            "path": ["api", "analytics", "incidentes-tendencia"]
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

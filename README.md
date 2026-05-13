@@ -8,6 +8,7 @@ Monorepo con los microservicios del backend del sistema de gestión de transport
 |---|---|---|---|
 | `ms-security` | Spring Boot 4 / Java 17 | 8080 | Autenticación, usuarios, roles y permisos |
 | `ms-notificaciones` | Flask 3 / Python | 5000 | Envío de correos via Gmail API |
+| `ms-negocio` | Node.js / Express / Mongoose | 3200 | Módulo de negocio: empresas, buses, rutas, boletos, etc. |
 
 ---
 

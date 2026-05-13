@@ -10,6 +10,7 @@ import com.sho.ms_security.models.User;
 import com.sho.ms_security.services.PasswordRecoveryService;
 import com.sho.ms_security.services.RecaptchaVerificationService;
 import com.sho.ms_security.services.SecurityService;
+import com.google.firebase.auth.FirebaseAuthException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -152,15 +153,15 @@ public class SecurityController {
                         .body(Map.of("error", "Token OAuth invalido"));
             }
             return ResponseEntity.ok(response);
+        } catch (FirebaseAuthException e) {
+            LOGGER.warn("Firebase rechazó el idToken OAuth: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Token OAuth invalido", "detail", e.getMessage()));
         } catch (Exception e) {
             LOGGER.error("Error en /security/oauth/login", e);
             if (e instanceof IllegalArgumentException) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("error", "Proveedor OAuth no permitido", "detail", e.getMessage()));
-            }
-            if (e.getClass().getSimpleName().contains("FirebaseAuthException")) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("error", "Token OAuth invalido", "detail", e.getMessage()));
             }
             if (e instanceof IOException || e instanceof IllegalStateException) {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
